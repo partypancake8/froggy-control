@@ -1,0 +1,120 @@
+#!/bin/zsh
+export FROGGY_PI_USER="${FROGGY_PI_USER:-froggy}"
+[[ "$FROGGY_PI_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || { echo "Invalid FROGGY_PI_USER" >&2; exit 2; }
+# froggy-motor: run the Froggy Turntable DM320T motor tests on froggy-pi, or locally in dry run.
+# Code lives in this checkout's motor/ directory.
+BIN_DIR="${0:A:h}"
+S="${FROGGY_MOTOR_DIR:-$BIN_DIR/../motor}"
+PORT_DEFAULT=7895
+
+usage() {
+cat <<'EOF'
+froggy-motor: DM320T stepper test tool for the Froggy Turntable (froggy-pi, Pi 3 B+)
+
+  froggy-motor ui [--port 7895] [--no-open] [--locked]
+                                              control page: camera, ramp/stop/STOP, live RPM chart;
+                                              --locked serves the page but refuses every ramp
+  froggy-motor ramp --rpm R --accel-s A --hold-s H --decel-s D [--dir cw|ccw] [--log f.csv]
+  froggy-motor stop                           emergency decel of a running ramp, then ENA off
+  froggy-motor estop-test [--s 5]             read and watch the mushroom e-stop input
+  froggy-motor index-test --s N [--rpm R]     count hall index pulses, report RPM
+  froggy-motor status                         backend, config, input levels
+  froggy-motor deploy                         copy code + install pigpio on the Pi (offline ok)
+  froggy-motor --pull-logs                    copy the Pi's CSV logs into motor/logs/
+  froggy-motor --dry-run <command ...>        run locally on this Mac with the fake pigpio
+  froggy-motor --which-host                   print the Pi address that will be used
+
+Without --dry-run every command first deploys (fast when nothing changed), then runs on the Pi
+over SSH in the foreground with live output; Ctrl-C on a ramp does the emergency decel.
+Host lookup, first that answers on port 22: $FROGGY_PI if set, then froggy-pi.local
+(Ethernet cable, mDNS), then ~/.config/froggy/pi-host (froggy-pi-net).
+EOF
+}
+
+which_host() {
+  local h
+  local saved=$(head -1 ~/.config/froggy/pi-host 2>/dev/null)   # written by froggy-pi-net --listen
+  for h in ${FROGGY_PI:+$FROGGY_PI} froggy-pi.local ${saved:+$saved}; do
+    if /usr/bin/nc -z -G 3 "$h" 22 >/dev/null 2>&1; then echo "$h"; return 0; fi
+  done
+  return 1
+}
+
+need_host() {
+  PI=$(which_host) || { echo "froggy-pi not reachable (tried froggy-pi.local${FROGGY_PI:+, $FROGGY_PI}): plug in the Ethernet cable or turn on the hotspot, and give the Pi a minute to boot" >&2; exit 1; }
+  SSH=(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=auto
+       -o "ControlPath=/tmp/froggy-ssh-%C" -o ControlPersist=60 "${FROGGY_PI_USER}@$PI")
+  export FROGGY_HOST="$PI"
+}
+
+deploy() {
+  if [[ -n "$FROGGY_SKIP_DEPLOY" ]]; then return 0; fi
+  "$S/deploy.sh" --quiet || { echo "deploy failed" >&2; exit 1; }
+}
+
+case "$1" in
+  -h|--help|help|"") usage; exit 0;;
+  --which-host) which_host || { echo "unreachable" >&2; exit 1; }; exit 0;;
+  --dry-run) shift; exec "${FROGGY_PYTHON:-python3}" "$S/froggy_motor.py" --dry-run "$@";;
+  --pull-logs)
+    need_host
+    mkdir -p "$S/logs"
+    "${SSH[@]}" 'ls ~/froggy-motor/logs/*.csv >/dev/null 2>&1' || { echo "no logs on the Pi yet"; exit 0; }
+    scp -q -o ConnectTimeout=10 -o "ControlPath=/tmp/froggy-ssh-%C" "${FROGGY_PI_USER}@$PI:~/froggy-motor/logs/*.csv" "$S/logs/" \
+      && echo "logs copied to $S/logs/" && ls -1t "$S/logs" | head -5
+    exit $?;;
+  deploy) need_host; FROGGY_HOST="$PI" exec "$S/deploy.sh";;
+  ui)
+    shift
+    PORT=$PORT_DEFAULT; NOOPEN=""; REST=()
+    while (( $# )); do
+      case "$1" in --port) PORT="$2"; shift 2;; --no-open) NOOPEN=1; shift;; *) REST+=("$1"); shift;; esac
+    done
+    need_host; deploy
+    # local port: a stale froggy tunnel on it gets killed; anything else makes us move to 7896..7899
+    holder() { lsof -nP -tiTCP:$1 -sTCP:LISTEN 2>/dev/null | head -1; }
+    LPORT=$PORT
+    h=$(holder $LPORT)
+    if [[ -n "$h" ]]; then
+      cmd=$(ps -o command= -p "$h")
+      if [[ "$cmd" == *"ssh -N"* && "$cmd" == *"-L $PORT:127.0.0.1:"* && "$cmd" == *"${FROGGY_PI_USER}@"* ]]; then
+        echo "port $PORT held by a stale froggy tunnel (pid $h): killing it"
+        kill "$h" 2>/dev/null; sleep 3      # let its own wrapper finish its cleanup first
+      else
+        for p in 7896 7897 7898 7899; do [[ -z "$(holder $p)" ]] && { LPORT=$p; break; }; done
+        [[ "$LPORT" == "$PORT" ]] && { echo "ports $PORT..7899 are all busy on this Mac" >&2; exit 1; }
+        echo "port $PORT is held by pid $h (${cmd[1,80]}); using local port $LPORT instead"
+      fi
+    fi
+    # separate call: the start command below contains the pattern and pkill would hit its own shell
+    "${SSH[@]}" "pkill -TERM -f '[f]roggy_motor.py ui'; sleep 1; true"
+    "${SSH[@]}" "cd ~/froggy-motor || exit 1; nohup python3 froggy_motor.py ui --port $PORT ${REST[*]} > ~/froggy-motor/ui.log 2>&1 < /dev/null &" \
+      || { echo "could not start the ui on $PI" >&2; exit 1; }
+    for i in {1..20}; do "${SSH[@]}" "curl -s -o /dev/null http://127.0.0.1:$PORT/" && break; sleep 0.5; done
+    "${SSH[@]}" "curl -s -o /dev/null http://127.0.0.1:$PORT/" || { echo "ui did not come up; last lines of ui.log:" >&2; "${SSH[@]}" 'tail -20 ~/froggy-motor/ui.log' >&2; exit 1; }
+    TUN=""
+    CLEANED=""
+    cleanup() {
+      [[ -n "$CLEANED" ]] && exit 0
+      CLEANED=1
+      [[ -n "$TUN" ]] && kill "$TUN" 2>/dev/null
+      echo "stopping the ui on $PI (motor ramps to rest, then the server exits)"
+      # TERM makes the server decelerate to rest and exit; wait for it, then make sure PWM is off
+      "${SSH[@]}" "pkill -TERM -f '[f]roggy_motor.py ui'; for i in \$(seq 1 25); do pgrep -f '[f]roggy_motor.py ui' >/dev/null || break; sleep 0.2; done; pkill -KILL -f '[f]roggy_motor.py ui'; cd ~/froggy-motor && python3 froggy_motor.py stop >/dev/null 2>&1; true"
+      exit 0
+    }
+    trap cleanup EXIT INT TERM HUP
+    echo "motor ui running on $PI (server bound to the Pi's loopback); this window holds the tunnel, Ctrl-C stops it"
+    echo "page: http://127.0.0.1:$LPORT/"
+    [[ -z "$NOOPEN" ]] && (sleep 1.5; open "http://127.0.0.1:$LPORT/") &
+    # tunnel runs as a child so Ctrl-C or kill reaches the trap at once; this script stays in the foreground
+    ssh -N -o ConnectTimeout=10 -o ExitOnForwardFailure=yes -o ServerAliveInterval=5 \
+        -L "$LPORT:127.0.0.1:$PORT" "${FROGGY_PI_USER}@$PI" &
+    TUN=$!
+    wait "$TUN"
+    exit 0;;
+  *)
+    need_host; deploy
+    exec ssh -t -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new "${FROGGY_PI_USER}@$PI" \
+      "cd ~/froggy-motor && python3 froggy_motor.py ${(j: :)${(q)@}}";;
+esac

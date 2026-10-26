@@ -1,0 +1,43 @@
+#!/bin/zsh
+export FROGGY_PI_USER="${FROGGY_PI_USER:-froggy}"
+[[ "$FROGGY_PI_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || { echo "Invalid FROGGY_PI_USER" >&2; exit 2; }
+# froggy-cam-live: low-latency live view of the froggy-pi OV5647 camera in an ffplay window.
+# Usage: froggy-cam-live [--tcp] [--stop]
+#   default: Pi pushes H.264 over UDP to this Mac (960x540@30, 1.5 Mbit/s, baseline, keyframe every 15)
+#   --tcp:   fallback, Pi listens on tcp :8888 with the same encoder settings
+# env FROGGY_PI overrides the Pi host (default froggy-pi.local); FROGGY_MAC overrides the UDP target
+# (default: this Mac's address on the route to the Pi).
+PI="${FROGGY_PI:-$(head -1 ~/.config/froggy/pi-host 2>/dev/null)}"; PI="${PI:-froggy-pi.local}"
+SSH=(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new "${FROGGY_PI_USER}@$PI")
+LOG="${FROGGY_RUN_DIR:-$HOME/.cache/froggy}"; mkdir -p "$LOG"
+MODE=udp
+for a in "$@"; do case "$a" in --tcp) MODE=tcp;; --stop) STOP=1;; esac; done
+stop_all() {
+  pkill -f 'ffplay.*froggy-pi live' 2>/dev/null
+  "${SSH[@]}" 'pkill -x rpicam-vid; sleep 1; true'
+}
+stop_all
+[[ -n "$STOP" ]] && { echo "stopped"; exit 0; }
+ENC="-t 0 -n --width 960 --height 540 --framerate 30 --rotation 180 --inline --intra 15 --bitrate 1500000 --profile baseline --level 4"
+PLAY=("${FROGGY_FFPLAY:-ffplay}" -fflags nobuffer -flags low_delay -framedrop -probesize 100000 -analyzeduration 500000 -sync ext -f h264)
+# raw H.264 has no timestamps: setpts=0 shows each frame on arrival (otherwise ffplay assumes 25 fps,
+# falls behind the 30 fps feed and builds seconds of queue). The larger probe only affects startup.
+VF=(-vf setpts=0)
+front() { sleep 3; osascript -e 'tell application "System Events" to set frontmost of (first process whose name contains "ffplay") to true' >/dev/null 2>&1; }
+# Wi-Fi power save adds hundreds of ms on the Pi; keep it off (also persisted in NetworkManager)
+"${SSH[@]}" 'sudo -n /usr/sbin/iw wlan0 set power_save off 2>/dev/null; true' || { echo "ssh to $PI failed"; exit 1; }
+if [[ $MODE == udp ]]; then
+  MAC="${FROGGY_MAC:-$(ipconfig getifaddr "$(route -n get "$PI" | awk '/interface:/{print $2}')")}"
+  [[ -z "$MAC" ]] && { echo "could not find this Mac's address toward $PI; set FROGGY_MAC"; exit 1; }
+  nohup "${PLAY[@]}" -i "udp://0.0.0.0:8888?buffer_size=1048576&fifo_size=8192&overrun_nonfatal=1" "${VF[@]}" -window_title "froggy-pi live" > "$LOG/ffplay.log" 2>&1 < /dev/null &
+  disown
+  sleep 1
+  "${SSH[@]}" "nohup rpicam-vid $ENC -o udp://$MAC:8888 > ~/rpicam-vid.log 2>&1 < /dev/null &"
+  front; echo "streaming $PI -> $MAC:8888 over UDP (ffplay window 'froggy-pi live'); stop with: froggy-cam-live --stop"
+else
+  "${SSH[@]}" "nohup rpicam-vid $ENC --listen -o tcp://0.0.0.0:8888 > ~/rpicam-vid.log 2>&1 < /dev/null &"
+  sleep 2
+  nohup "${PLAY[@]}" -i "tcp://$PI:8888" "${VF[@]}" -window_title "froggy-pi live" > "$LOG/ffplay.log" 2>&1 < /dev/null &
+  disown
+  front; echo "streaming from $PI:8888 over TCP (ffplay window 'froggy-pi live'); stop with: froggy-cam-live --stop"
+fi

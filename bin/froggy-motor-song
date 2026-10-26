@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""Play a tune on the Froggy stepper by stepping it at note frequencies (one ssh)."""
+import os, sys, subprocess, argparse, re
+
+PI_USER = os.environ.get("FROGGY_PI_USER", "froggy")
+if not re.fullmatch(r"[a-z_][a-z0-9_-]*", PI_USER):
+    raise SystemExit("Invalid FROGGY_PI_USER")
+
+SEMI = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+
+def freq(n):
+    o = int(n[-1]); body = n[:-1]
+    s = SEMI[body[0]] + body[1:].count("#") - body[1:].count("b")
+    hz = 440.0 * 2 ** ((s + 12 * (o + 1) - 69) / 12)
+    while hz < 200: hz *= 2
+    while hz > 1200: hz /= 2
+    return int(round(hz))
+
+# (note or "R", beats)
+# Generic scales only; no transcriptions of commercial melodies.
+SONGS = {
+ "scale": [(n, 1) for n in ("C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5")],
+ "arpeggio": [(n, 1) for n in ("C4", "E4", "G4", "C5", "G4", "E4", "C4")],
+}
+
+
+def main():
+    ap = argparse.ArgumentParser(prog="froggy-motor-song")
+    ap.add_argument("name", nargs="?"); ap.add_argument("--tempo", type=float, default=1.0)
+    ap.add_argument("--dry-run", action="store_true"); ap.add_argument("--list", action="store_true")
+    a = ap.parse_args()
+    if a.list:
+        print("\n".join(SONGS)); return 0
+    if a.name not in SONGS:
+        print("pick a song: " + ", ".join(SONGS), file=sys.stderr); return 2
+    beat = 0.3 / a.tempo
+    L = ['if pgrep -f "froggy_motor.py (ramp|ui)" >/dev/null; then echo "motor program is running, refusing" >&2; exit 2; fi']
+    print("note  freq_hz  seconds")
+    for n, b in SONGS[a.name]:
+        d = round(b * beat, 3)
+        if n == "R":
+            print(f"rest  {'-':>7}  {d}"); L.append(f"sleep {d}")
+        else:
+            f = freq(n); print(f"{n:<5} {f:>7}  {d}")
+            L += [f"pigs hp 18 {f} 500000", f"sleep {d}", "pigs hp 18 0 0", "sleep 0.04"]
+    L.append("pigs hp 18 0 0")
+    script = "\n".join(L) + "\n"
+    host = os.environ.get("FROGGY_PI", "froggy-pi")
+    try:
+        h = open(os.path.expanduser("~/.config/froggy/pi-host")).read().strip()
+        if h and not os.environ.get("FROGGY_PI"): host = h
+    except OSError: pass
+    cmd = ["ssh", "-o", "ConnectTimeout=10", "-o", "BatchMode=yes", f"{PI_USER}@{host}", "sh"]
+    if a.dry_run:
+        print("\n# would run: " + " ".join(cmd) + "\n" + script, end=""); return 0
+    r = subprocess.run(cmd, input=script, text=True)
+    print(f"ssh exit {r.returncode}"); return r.returncode
+
+sys.exit(main())

@@ -1,0 +1,588 @@
+#!/bin/bash
+export FROGGY_PI_USER="${FROGGY_PI_USER:-froggy}"
+[[ "$FROGGY_PI_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || { echo "Invalid FROGGY_PI_USER" >&2; exit 2; }
+# froggy-pi-flash: write Raspberry Pi OS Lite (Bookworm) to a Froggy Pi SD card and bake in headless setup.
+#   default:  Pi 3 B+, 64-bit image (hostname froggy-pi, user selected by FROGGY_PI_USER + Mac SSH key, ssh, camera, phone-home).
+#   --zero:   Pi Zero W, 32-bit armhf image (hostname froggy-zero, same user/key, ssh, camera,
+#             hotspot + MWireless Wi-Fi, phone-home v2 via froggy-mac.txt, Tailscale as froggy-zero).
+# Usage: froggy-pi-flash [diskN]   (explicit target required). Asks for the sudo password once for the raw write.
+#        froggy-pi-flash --zero [--stage-only DIR] [diskN]      (see --help)
+set -euo pipefail
+umask 077
+
+usage() {
+cat <<'EOF'
+froggy-pi-flash: flash Raspberry Pi OS Lite (Bookworm) onto a Froggy Pi SD card, headless setup baked in.
+
+  froggy-pi-flash [diskN]
+      Pi 3 B+ card (explicit target required): 64-bit Lite (2026-10-06), hostname froggy-pi, user selected by FROGGY_PI_USER with the
+      Mac SSH key, ssh, camera, i2c, hotspot Wi-Fi ($RUN/wifi.txt or asked), phone-home timer.
+
+  froggy-pi-flash --zero diskN
+      Pi Zero W card (original Zero W, ARMv6, so 32-bit only): newest Raspberry Pi OS Lite armhf
+      Bookworm from downloads.raspberrypi.com (cached + sha256-checked in $RUN), then on the card:
+        hostname froggy-zero, user selected by FROGGY_PI_USER (password locked by default + Mac SSH key), ssh, camera_auto_detect=1,
+        i2c, Wi-Fi country US (cmdline regdom + raspi-config),
+        hotspot.nmconnection    from $RUN/wifi.txt (SSID=..., PSK=...) if present, else asked
+                                (Enter skips), priority 10
+        mwireless.nmconnection  MWireless PEAP/MSCHAPv2 keyfile, priority 20, written by
+                                froggy-pi-net --sdcard (same CA handling); uniqname from
+                                FROGGY_UNIQNAME (required or prompted), password from FROGGY_PI_PASSWORD or
+                                asked with no echo; it goes only onto the card, never onto this Mac
+        froggy-mac.txt          phone-home target "<Mac en0 IP>:8767" (FROGGY_MAC_HOST overrides)
+        froggy-net-firstboot.sh phone-home v2 service/timer + froggy-tailscale oneshot service
+                                (tailscale up --hostname froggy-zero; optional froggy-tailscale-authkey
+                                file on the card skips the login link)
+        firstrun.sh             one-shot first boot hooked into cmdline.txt (systemd.run)
+      The disk must be given, and must be external, removable and 15.9 or 16.0 GB.
+      All questions (hotspot, UMICH password, sudo) are asked before the raw write starts.
+      After it boots: froggy-pi-net --listen   (prints its IP, Tailscale state and login link)
+
+  froggy-pi-flash --zero --stage-only DIR [diskN]
+      Everything except the raw write: download + verify the image, write the boot files that
+      would go onto the card into DIR/boot/ (base cmdline.txt/config.txt read from the image's own
+      boot partition), put the image in DIR (raw .img, decompressed once into $RUN and hard-linked,
+      plus the .img.xz), and print the write command it would run. No sudo, nothing touches a disk.
+
+  -h, --help   this text
+$RUN = ${FROGGY_RUN_DIR:-$HOME/.cache/froggy}; log in $RUN/flash.log (real flashes).
+EOF
+}
+
+ZERO=0; STAGE=""; ARGDISK=""
+for a in "$@"; do
+  if [ "${WANT_STAGE:-0}" = 1 ]; then STAGE="$a"; WANT_STAGE=0; continue; fi
+  case "$a" in
+    -h|--help|help) usage; exit 0;;
+    --zero) ZERO=1;;
+    --stage-only) WANT_STAGE=1;;
+    -*) echo "froggy-pi-flash: unknown option $a" >&2; usage >&2; exit 2;;
+    *) [ -z "$ARGDISK" ] || { echo "froggy-pi-flash: only one disk argument" >&2; exit 2; }
+       ARGDISK="${a#/dev/}";;
+  esac
+done
+[ "${WANT_STAGE:-0}" = 0 ] || { echo "froggy-pi-flash: --stage-only needs a directory" >&2; exit 2; }
+if [ -n "$STAGE" ] && [ $ZERO = 0 ]; then echo "froggy-pi-flash: --stage-only is for --zero" >&2; exit 2; fi
+set -- ${ARGDISK:+"$ARGDISK"}
+
+# ======================================================================== --zero (Pi Zero W)
+zdie() { echo "froggy-pi-flash --zero: $*" >&2; exit 1; }
+
+# Newest Bookworm armhf Lite image: oldstable first (Bookworm since Trixie became stable), then stable.
+zero_find_url() {
+  local base dir f
+  for base in raspios_oldstable_lite_armhf raspios_lite_armhf; do
+    dir=$(curl -fsSL --retry 3 -m 30 "https://downloads.raspberrypi.com/$base/images/" 2>/dev/null \
+          | grep -o "href=\"${base}-[0-9-]*/\"" | sed 's/^href="//; s/\/"$//' | sort | tail -1) || true
+    [ -n "$dir" ] || continue
+    f=$(curl -fsSL --retry 3 -m 30 "https://downloads.raspberrypi.com/$base/images/$dir/" 2>/dev/null \
+        | grep -o 'href="[^"]*-bookworm-armhf-lite\.img\.xz"' | sed 's/^href="//; s/"$//' | sort | tail -1) || true
+    if [ -n "$f" ]; then echo "https://downloads.raspberrypi.com/$base/images/$dir/$f"; return 0; fi
+  done
+  return 1
+}
+
+# Read cmdline.txt + config.txt (and the root listing) from the image's FAT boot partition, no mount.
+zero_extract_boot() {  # IMG OUTDIR
+  /usr/bin/env python3 -I - "$1" "$2" <<'PY'
+import lzma, os, struct, sys
+img, out = sys.argv[1], sys.argv[2]
+class R:
+    def __init__(s): s.f = lzma.open(img, "rb"); s.pos = 0
+    def at(s, off, n):
+        if off < s.pos: s.f.close(); s.f = lzma.open(img, "rb"); s.pos = 0
+        if off > s.pos: s.f.seek(off); s.pos = off
+        b = s.f.read(n); s.pos += len(b); return b
+r = R()
+mbr = r.at(0, 512)
+assert mbr[510:512] == b"\x55\xaa", "no MBR"
+ptype = mbr[446 + 4]; lba = struct.unpack_from("<I", mbr, 446 + 8)[0]
+assert ptype in (0x0b, 0x0c, 0x0e, 0x06), "partition 1 is not FAT (type %#x)" % ptype
+P = lba * 512
+bs = r.at(P, 512)
+bps, spc = struct.unpack_from("<H", bs, 11)[0], bs[13]
+rsvd, nfat, rootcnt = struct.unpack_from("<H", bs, 14)[0], bs[16], struct.unpack_from("<H", bs, 17)[0]
+f16 = struct.unpack_from("<H", bs, 22)[0]
+fsz = f16 or struct.unpack_from("<I", bs, 36)[0]
+fat32 = f16 == 0
+rootsecs = (rootcnt * 32 + bps - 1) // bps
+data0 = rsvd + nfat * fsz + rootsecs
+fat = r.at(P + rsvd * bps, fsz * bps)
+csz = spc * bps
+def nxt(c):
+    if fat32: return struct.unpack_from("<I", fat, c * 4)[0] & 0x0FFFFFFF
+    return struct.unpack_from("<H", fat, c * 2)[0]
+END = 0x0FFFFFF8 if fat32 else 0xFFF8
+def chain(c):
+    out = []
+    while 2 <= c < END and len(out) < 1 << 20: out.append(c); c = nxt(c)
+    return out
+def clus(c): return P + (data0 + (c - 2) * spc) * bps
+if fat32:
+    root = b"".join(r.at(clus(c), csz) for c in chain(struct.unpack_from("<I", bs, 44)[0]))
+else:
+    root = r.at(P + (rsvd + nfat * fsz) * bps, rootsecs * bps)
+ents, lfn = {}, []
+for i in range(0, len(root), 32):
+    e = root[i:i + 32]
+    if e[0] == 0: break
+    if e[0] == 0xE5: lfn = []; continue
+    if e[11] == 0x0F:
+        lfn.insert(0, e[1:11] + e[14:26] + e[28:32]); continue
+    if e[11] & 0x08: lfn = []; continue
+    short = e[0:8].decode("latin1").rstrip() + ("." + e[8:11].decode("latin1").rstrip() if e[8:11].strip() else "")
+    name = b"".join(lfn).decode("utf-16-le", "ignore").split("\x00")[0] if lfn else short.lower()
+    lfn = []
+    c = struct.unpack_from("<H", e, 20)[0] << 16 | struct.unpack_from("<H", e, 26)[0]
+    ents[name] = (c, struct.unpack_from("<I", e, 28)[0], bool(e[11] & 0x10))
+os.makedirs(out, exist_ok=True)
+for want in ("cmdline.txt", "config.txt"):
+    assert want in ents, want + " not in the image boot partition"
+for want in sorted(("cmdline.txt", "config.txt"), key=lambda n: ents[n][0]):
+    c, size, _ = ents[want]
+    data = b"".join(r.at(clus(k), csz) for k in chain(c))[:size]
+    open(os.path.join(out, want), "wb").write(data)
+open(os.path.join(out, "LISTING"), "w").write("".join(n + ("/" if d else "") + "\n" for n, (c, s, d) in sorted(ents.items())))
+PY
+}
+
+zero_main() {
+  local RUN="${FROGGY_RUN_DIR:-$HOME/.cache/froggy}"
+  local HASH="${FROGGY_PASSWORD_HASH:-!}"
+  local PUBKEY; PUBKEY="$(cat "${FROGGY_SSH_PUBLIC_KEY:-$HOME/.ssh/id_ed25519.pub}")"
+  local NET="$(cd "$(dirname "$0")" && pwd)/froggy-pi-net"
+  local HOSTN=froggy-zero
+  local DISK="${1:-}" B URL IMG
+  [ -x "$NET" ] || zdie "$NET missing (it writes the MWireless keyfile, phone-home and Tailscale steps)"
+  mkdir -p "$RUN"
+  if [ -z "$STAGE" ]; then
+    [ -n "$DISK" ] || zdie "give the card's disk, e.g. froggy-pi-flash --zero disk8 (see diskutil list)"
+    exec > >(tee -a "$RUN/flash.log") 2>&1
+  fi
+  echo "== froggy-pi-flash --zero $(date)${STAGE:+ (stage only into $STAGE)}"
+
+  # 1. newest Bookworm armhf Lite image + checksum, cached in $RUN
+  if URL=$(zero_find_url); then
+    IMG="$RUN/$(basename "$URL")"
+    echo "image: $URL"
+    if [ -f "$IMG" ]; then echo "cached: $IMG (not downloading again)"
+    else
+      curl -fL --retry 3 -o "$IMG.part" "$URL" && mv "$IMG.part" "$IMG"
+    fi
+    [ -s "$IMG.sha256" ] || curl -fsSL --retry 3 -o "$IMG.sha256" "$URL.sha256"
+  else
+    IMG=$(ls -1 "$RUN"/*-bookworm-armhf-lite.img.xz 2>/dev/null | sort | tail -1 || true)
+    [ -n "$IMG" ] && [ -s "$IMG.sha256" ] || zdie "could not list downloads.raspberrypi.com and no cached armhf image in $RUN"
+    echo "offline: using cached $IMG"
+  fi
+  case "$IMG" in *armhf*) ;; *) zdie "$IMG is not an armhf (32-bit) image";; esac
+  ( cd "$RUN" && shasum -a 256 -c "$(basename "$IMG").sha256" >/dev/null ) || { rm -f "$IMG.sha256"; zdie "sha256 MISMATCH for $IMG, aborting (delete the image to re-download)"; }
+  echo "sha256 OK: $(basename "$IMG") matches $(basename "$IMG").sha256 ($(cut -c1-16 "$IMG.sha256")...)"
+
+  # 2. target disk: external, removable, 15.9 or 16.0 GB (read-only check, also in stage mode if given)
+  if [ -n "$DISK" ]; then
+    case "$DISK" in disk[0-9]*) ;; *) zdie "disk must look like diskN, got $DISK";; esac
+    local INFO BYTES
+    INFO="$(diskutil info "/dev/$DISK")" || zdie "no /dev/$DISK"
+    echo "$INFO" | grep -q 'Device Location: *External' || zdie "$DISK not external, abort"
+    echo "$INFO" | grep -q 'Removable Media: *Removable' || zdie "$DISK not removable, abort"
+    if echo "$INFO" | grep -q 'Internal: *Yes'; then zdie "$DISK is internal, abort"; fi
+    BYTES=$(echo "$INFO" | sed -n 's/.*Disk Size:.*(\([0-9]*\) Bytes).*/\1/p')
+    { [ -n "$BYTES" ] && [ "$BYTES" -gt 15500000000 ] && [ "$BYTES" -lt 16200000000 ]; } || zdie "$DISK size ${BYTES:-?} bytes is not a 15.9/16.0 GB card, abort"
+    echo "Target /dev/$DISK OK: external, removable, $BYTES bytes"
+  fi
+
+  # 3. questions first, so nothing is asked after the long write
+  local SSID="" PSK="" UNIQ="${FROGGY_UNIQNAME:-}" PW="${FROGGY_PI_PASSWORD:-}"
+  if [ -f "$RUN/wifi.txt" ]; then
+    SSID=$(sed -n 's/^SSID=//p' "$RUN/wifi.txt" | head -1)
+    PSK=$(sed -n 's/^PSK=//p' "$RUN/wifi.txt" | head -1)
+  elif [ -z "$STAGE" ] && [ -r /dev/tty ]; then
+    read -r -p "Hotspot Wi-Fi name (SSID), Enter to skip (MWireless only): " SSID < /dev/tty || SSID=""
+    [ -z "$SSID" ] || { read -r -s -p "Hotspot password: " PSK < /dev/tty; echo; }
+  fi
+  if [ -z "$UNIQ" ]; then
+    [ -r /dev/tty ] || zdie "set FROGGY_UNIQNAME"
+    read -r -p "U-M uniqname: " UNIQ < /dev/tty
+  fi
+  [ -n "$UNIQ" ] || zdie "empty campus login"
+  if [ -z "$PW" ]; then
+    [ -r /dev/tty ] || zdie "no terminal to ask for the UMICH password; set FROGGY_PI_PASSWORD"
+    read -r -s -p "UMICH password for $UNIQ (not shown, goes only onto the card): " PW < /dev/tty; echo
+  fi
+  [ -n "$PW" ] || zdie "empty UMICH password"
+
+  # 4. the write (real) or the stage directory
+  if [ -n "$STAGE" ]; then
+    B="${STAGE%/}/boot"
+    if [ -e "$B" ]; then
+      [ -f "$B/.froggy-stage" ] || zdie "$B exists and was not made by --stage-only; pick an empty DIR"
+      rm -rf "$B"
+    fi
+    mkdir -p "$B"; touch "$B/.froggy-stage"
+    local BASE="$IMG.bootfs"
+    if [ ! -s "$BASE/cmdline.txt" ] || [ ! -s "$BASE/config.txt" ]; then
+      echo "reading cmdline.txt and config.txt from the image's boot partition"
+      zero_extract_boot "$IMG" "$BASE" || zdie "could not read the boot partition of $IMG"
+    fi
+    cp "$BASE/cmdline.txt" "$BASE/config.txt" "$B/"
+    # the image itself next to boot/: raw .img (decompressed once into $RUN, hard-linked or cloned here) + the .img.xz
+    local RAW="${IMG%.xz}" SD="${STAGE%/}"
+    if [ ! -s "$RAW" ]; then
+      echo "decompressing once to $RAW (the exact bytes the write would put on the card)"
+      xz -dc "$IMG" > "$RAW.part" && mv "$RAW.part" "$RAW"
+    fi
+    ln -f "$RAW" "$SD/$(basename "$RAW")" 2>/dev/null || cp -c "$RAW" "$SD/$(basename "$RAW")"
+    ln -sf "$IMG" "$SD/$(basename "$IMG")"
+    echo "staged image: $SD/$(basename "$RAW") ($(( $(stat -f %z "$RAW") / 1048576 )) MiB raw) and $SD/$(basename "$IMG")"
+    if grep -qx 'kernel.img' "$BASE/LISTING" && grep -qx 'bcm2708-rpi-zero-w.dtb' "$BASE/LISTING"; then
+      echo "image boot partition has kernel.img (ARMv6) and bcm2708-rpi-zero-w.dtb: boots a Zero W"
+    else
+      echo "WARNING: kernel.img or bcm2708-rpi-zero-w.dtb not found in the image boot partition"
+    fi
+    echo "would run: diskutil unmountDisk /dev/${DISK:-diskN}"
+    echo "would run: xz -dc '$IMG' | sudo 'dd' of=/dev/r${DISK:-diskN} bs=4m status=progress   (raw write, skipped by --stage-only)"
+    echo "would then write the boot files below onto /Volumes/bootfs and eject"
+  else
+    sudo -v
+    diskutil unmountDisk "/dev/$DISK"
+    xz -dc "$IMG" | sudo dd of="/dev/r$DISK" bs=4m status=progress
+    sync
+    sleep 3
+    diskutil mountDisk "/dev/$DISK" || true
+    local i
+    for i in $(seq 1 20); do [ -f /Volumes/bootfs/cmdline.txt ] && break; sleep 1; done
+    B=/Volumes/bootfs
+    [ -f "$B/cmdline.txt" ] || zdie "bootfs not mounted"
+  fi
+
+  # 5. boot partition: ssh, user, camera, i2c
+  touch "$B/ssh"
+  echo "$FROGGY_PI_USER:$HASH" > "$B/userconf.txt"
+  # OV5647 (UC-261) is found by camera_auto_detect on every Pi incl. the Zero W; no dtoverlay needed
+  grep -q '^camera_auto_detect=1' "$B/config.txt" || echo 'camera_auto_detect=1' >> "$B/config.txt"
+  if grep -q '^#dtparam=i2c_arm=on' "$B/config.txt"; then
+    sed -i '' 's/^#dtparam=i2c_arm=on/dtparam=i2c_arm=on/' "$B/config.txt"
+  elif ! grep -q '^dtparam=i2c_arm=on' "$B/config.txt"; then
+    printf 'dtparam=i2c_arm=on\n%s\n' "$(cat "$B/config.txt")" > "$B/config.txt.new" && mv "$B/config.txt.new" "$B/config.txt"
+  fi
+
+  # 6. hotspot keyfile (priority 10), same as the Pi 3 card
+  if [ -n "$SSID" ]; then
+    umask 077
+    printf '[connection]\nid=hotspot\ntype=wifi\nautoconnect=true\nautoconnect-priority=10\n\n[wifi]\nssid=%s\nmode=infrastructure\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%s\n\n[ipv4]\nmethod=auto\n\n[ipv6]\nmethod=auto\n' "$SSID" "$PSK" > "$B/hotspot.nmconnection"
+    umask 022
+    echo "hotspot Wi-Fi profile written for SSID: $SSID (priority 10)"
+  else
+    echo "no hotspot profile (no $RUN/wifi.txt); MWireless only"
+  fi
+  PSK=""
+
+  # 7. MWireless keyfile + froggy-mac.txt + phone-home v2 + Tailscale: froggy-pi-net --sdcard writes them
+  #    (its exact files). "/." keeps it from treating the real card as its own (no kernel8 check, no unmount).
+  echo "== froggy-pi-net --sdcard (MWireless, phone-home target, Tailscale):"
+  FROGGY_UNIQNAME="$UNIQ" FROGGY_PI_PASSWORD="$PW" "$NET" --sdcard --boot "$B/." ${FROGGY_MAC_HOST:+--mac-host "$FROGGY_MAC_HOST"} \
+    | grep -vE '^(Next:|then joins)' || zdie "froggy-pi-net --sdcard failed"
+  PW=""
+  { [ -s "$B/mwireless.nmconnection" ] && [ -s "$B/froggy-mac.txt" ] && [ -s "$B/froggy-net-firstboot.sh" ]; } || zdie "froggy-pi-net did not write its files"
+  sed -i '' "s/--hostname froggy-pi /--hostname $HOSTN /g" "$B/froggy-net-firstboot.sh"
+  [ "$(grep -c -- "--hostname $HOSTN " "$B/froggy-net-firstboot.sh")" = 2 ] || zdie "could not set the Tailscale hostname to $HOSTN"
+  sed -i '' "s/^# froggy-net-firstboot.sh (written by froggy-pi-net on the Mac)/# froggy-net-firstboot.sh (written by froggy-pi-net for froggy-pi-flash --zero, run by firstrun.sh)/" "$B/froggy-net-firstboot.sh"
+
+  cat > "$B/firstrun.sh" <<EOF
+#!/bin/bash
+# firstrun.sh (froggy-pi-flash --zero): one-shot first boot of the Pi Zero W card, then reboot.
+set +e
+BOOT=/boot/firmware; [ -d \$BOOT ] || BOOT=/boot
+NEWUSER="$FROGGY_PI_USER"
+HASH="${FROGGY_PASSWORD_HASH:-!}"
+PUBKEY='$PUBKEY'
+
+# Wi-Fi country first (also clears the rfkill soft block), then the hotspot profile
+raspi-config nonint do_wifi_country US
+rfkill unblock all
+if [ -f \$BOOT/hotspot.nmconnection ]; then
+   install -o root -g root -m 600 \$BOOT/hotspot.nmconnection /etc/NetworkManager/system-connections/hotspot.nmconnection
+   rm -f \$BOOT/hotspot.nmconnection
+   systemctl is-active --quiet NetworkManager && nmcli connection reload
+fi
+
+# hostname
+CURRENT_HOSTNAME=\$(cat /etc/hostname | tr -d " \t\n\r")
+if [ -f /usr/lib/raspberrypi-sys-mods/imager_custom ]; then
+   /usr/lib/raspberrypi-sys-mods/imager_custom set_hostname $HOSTN
+else
+   echo $HOSTN >/etc/hostname
+   sed -i "s/127.0.1.1.*\$CURRENT_HOSTNAME/127.0.1.1\t$HOSTN/g" /etc/hosts
+fi
+
+# user selected by FROGGY_PI_USER (same as userconf.txt; done here so the key can be installed now)
+if [ -f /usr/lib/userconf-pi/userconf ]; then
+   /usr/lib/userconf-pi/userconf "\$NEWUSER" "\$HASH"
+else
+   FIRSTUSER=\$(getent passwd 1000 | cut -d: -f1)
+   if [ -n "\$FIRSTUSER" ] && [ "\$FIRSTUSER" != "\$NEWUSER" ]; then
+      usermod -l "\$NEWUSER" "\$FIRSTUSER"; usermod -m -d "/home/\$NEWUSER" "\$NEWUSER"; groupmod -n "\$NEWUSER" "\$FIRSTUSER"
+   elif [ -z "\$FIRSTUSER" ]; then
+      useradd -m -u 1000 "\$NEWUSER"
+   fi
+   echo "\$NEWUSER:\$HASH" | chpasswd -e
+fi
+rm -f \$BOOT/userconf.txt
+for g in sudo video i2c gpio dialout plugdev; do getent group \$g >/dev/null && usermod -aG \$g \$NEWUSER; done
+
+# ssh + key
+HOMEDIR=\$(getent passwd \$NEWUSER | cut -d: -f6)
+install -o "\$NEWUSER" -m 700 -d "\$HOMEDIR/.ssh"
+echo "\$PUBKEY" > "\$HOMEDIR/.ssh/authorized_keys"
+chown "\$NEWUSER:" "\$HOMEDIR/.ssh/authorized_keys"; chmod 600 "\$HOMEDIR/.ssh/authorized_keys"
+if [ -f /usr/lib/raspberrypi-sys-mods/imager_custom ]; then
+   /usr/lib/raspberrypi-sys-mods/imager_custom enable_ssh
+else
+   systemctl enable ssh
+fi
+
+# timezone
+if [ -f /usr/lib/raspberrypi-sys-mods/imager_custom ]; then
+   /usr/lib/raspberrypi-sys-mods/imager_custom set_timezone America/Detroit
+else
+   rm -f /etc/localtime; echo America/Detroit >/etc/timezone; dpkg-reconfigure -f noninteractive tzdata
+fi
+
+# console boot, no autologin
+raspi-config nonint do_boot_behaviour B1
+
+# MWireless keyfile (+ CA check), phone-home v2 to froggy-mac.txt, froggy-tailscale oneshot
+# (tailscale up --hostname $HOSTN): froggy-pi-net's first-boot script, log in froggy-net.log
+if [ -f \$BOOT/froggy-net-firstboot.sh ]; then
+   bash \$BOOT/froggy-net-firstboot.sh
+   rm -f \$BOOT/froggy-net-firstboot.sh
+fi
+
+rm -f \$BOOT/firstrun.sh
+sed -i 's| systemd.run=[^ ]*||g; s| systemd.run_success_action=[^ ]*||g; s| systemd.unit=kernel-command-line.target||g' \$BOOT/cmdline.txt
+grep -q 'cfg80211.ieee80211_regdom=' \$BOOT/cmdline.txt || sed -i 's|\$| cfg80211.ieee80211_regdom=US|' \$BOOT/cmdline.txt
+exit 0
+EOF
+
+  # 8. cmdline.txt: Wi-Fi regulatory domain US + the firstrun hook (replaces froggy-pi-net's own hook)
+  local CMD
+  CMD=$(tr -d '\n' < "$B/cmdline.txt" | sed 's| systemd.run.*||')
+  case "$CMD" in *cfg80211.ieee80211_regdom=*) ;; *) CMD="$CMD cfg80211.ieee80211_regdom=US";; esac
+  printf '%s systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=reboot systemd.unit=kernel-command-line.target\n' "$CMD" > "$B/cmdline.txt"
+
+  echo "== boot files$([ -n "$STAGE" ] && echo " staged in $B"):"
+  if [ -n "$STAGE" ]; then ls -la "$B"; else ls "$B" | grep -E 'nmconnection|froggy|firstrun|ssh|userconf|cmdline|config' || true; fi
+  echo "== cmdline.txt:"; cat "$B/cmdline.txt"
+  echo "== config.txt camera/i2c:"; grep -nE 'camera_auto_detect|i2c_arm|dtoverlay=ov5647' "$B/config.txt" || true
+  echo "== mwireless.nmconnection (password field not shown):"
+  grep -E '^(id|ssid|autoconnect-priority|key-mgmt|eap|phase2-auth|identity|ca-cert)=' "$B/mwireless.nmconnection" | sed 's/^/   /'
+  echo "== firstrun.sh hostname / Tailscale:"
+  grep -nE "set_hostname|tailscale" "$B/firstrun.sh" | sed 's/^/   /'
+  grep -n -- "--hostname $HOSTN " "$B/froggy-net-firstboot.sh" | sed 's/^ *//; s/^/   froggy-net-firstboot.sh:/'
+  echo "   phone-home target (froggy-mac.txt): $(tr '\n' ' ' < "$B/froggy-mac.txt")"
+  if [ -n "$STAGE" ]; then
+    echo "== Staged only: nothing was written to any disk. Real flash: froggy-pi-flash --zero diskN"
+    return 0
+  fi
+  sync
+  diskutil eject "/dev/$DISK"
+  echo "== Done, card ejected. Put it in the Pi Zero W and power it on (first boot reboots by itself)."
+  echo "   On this Mac run: froggy-pi-net --listen   (reports host froggy-zero, its IPs and a Tailscale login link)"
+  echo "   Then: ssh ${FROGGY_PI_USER}@froggy-zero  (tailnet) or the campus IP it reports"
+}
+
+if [ $ZERO = 1 ]; then zero_main "$@"; exit $?; fi
+
+# ======================================================================== Pi 3 B+ (unchanged)
+DISK="${1:?Specify the target SD card explicitly, e.g. disk4}"
+RUN="${FROGGY_RUN_DIR:-$HOME/.cache/froggy}"
+URL=https://downloads.raspberrypi.com/raspios_oldstable_lite_arm64/images/raspios_oldstable_lite_arm64-2026-10-06/2026-10-06-raspios-bookworm-arm64-lite.img.xz
+IMG="$RUN/$(basename "$URL")"
+HASH="${FROGGY_PASSWORD_HASH:-!}"
+PUBKEY="$(cat "${FROGGY_SSH_PUBLIC_KEY:-$HOME/.ssh/id_ed25519.pub}")"
+LOG="$RUN/flash.log"
+mkdir -p "$RUN"; exec > >(tee -a "$LOG") 2>&1
+echo "== froggy-pi-flash $(date)"
+
+# 1. image + checksum
+[ -f "$IMG" ] || curl -fL -o "$IMG" "$URL"
+curl -fsSL -o "$IMG.sha256" "$URL.sha256"
+( cd "$RUN" && shasum -a 256 -c "$IMG.sha256" ) || { echo "sha256 MISMATCH, aborting"; exit 1; }
+
+# 2. triple-check the target disk: external, removable, ~15.9 GB
+INFO="$(diskutil info "/dev/$DISK")"
+echo "$INFO" | grep -q 'Device Location: *External' || { echo "$DISK not external, abort"; exit 1; }
+echo "$INFO" | grep -q 'Removable Media: *Removable' || { echo "$DISK not removable, abort"; exit 1; }
+BYTES=$(echo "$INFO" | sed -n 's/.*Disk Size:.*(\([0-9]*\) Bytes).*/\1/p')
+{ [ "$BYTES" -gt 15000000000 ] && [ "$BYTES" -lt 16500000000 ]; } || { echo "$DISK size $BYTES not ~15.9 GB, abort"; exit 1; }
+echo "Target /dev/$DISK OK: external, removable, $BYTES bytes"
+
+# 3. write
+diskutil unmountDisk "/dev/$DISK"
+xz -dc "$IMG" | sudo dd of="/dev/r$DISK" bs=4m status=progress
+sync
+sleep 3
+diskutil mountDisk "/dev/$DISK" || true
+for i in $(seq 1 20); do [ -f /Volumes/bootfs/cmdline.txt ] && break; sleep 1; done
+B=/Volumes/bootfs
+[ -f "$B/cmdline.txt" ] || { echo "bootfs not mounted"; exit 1; }
+
+# 4. customise the boot partition
+touch "$B/ssh"
+echo "$FROGGY_PI_USER:$HASH" > "$B/userconf.txt"
+grep -q '^camera_auto_detect=1' "$B/config.txt" || echo 'camera_auto_detect=1' >> "$B/config.txt"
+if grep -q '^#dtparam=i2c_arm=on' "$B/config.txt"; then
+  sed -i '' 's/^#dtparam=i2c_arm=on/dtparam=i2c_arm=on/' "$B/config.txt"
+elif ! grep -q '^dtparam=i2c_arm=on' "$B/config.txt"; then
+  printf 'dtparam=i2c_arm=on\n%s\n' "$(cat "$B/config.txt")" > "$B/config.txt.new" && mv "$B/config.txt.new" "$B/config.txt"
+fi
+
+# Wi-Fi (phone hotspot): from $RUN/wifi.txt (SSID=..., PSK=...) or asked here
+SSID=""; PSK=""
+if [ -f "$RUN/wifi.txt" ]; then
+  SSID=$(sed -n 's/^SSID=//p' "$RUN/wifi.txt" | head -1)
+  PSK=$(sed -n 's/^PSK=//p' "$RUN/wifi.txt" | head -1)
+fi
+if [ -z "$SSID" ]; then
+  read -r -p "Hotspot Wi-Fi name (SSID): " SSID
+  read -r -s -p "Hotspot password: " PSK; echo
+fi
+if [ -n "$SSID" ]; then
+  umask 077
+  printf '[connection]\nid=hotspot\ntype=wifi\nautoconnect=true\nautoconnect-priority=10\n\n[wifi]\nssid=%s\nmode=infrastructure\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%s\n\n[ipv4]\nmethod=auto\n\n[ipv6]\nmethod=auto\n' "$SSID" "$PSK" > "$B/hotspot.nmconnection"
+  umask 022
+  echo "Wi-Fi profile written for SSID: $SSID"
+else
+  echo "WARNING: no Wi-Fi configured; this Pi has no Ethernet so it will not come online"
+fi
+
+printf '%s\n' "${FROGGY_MAC_HOST:-}" > "$B/froggy-mac.txt"
+cat > "$B/froggy-phonehome.sh" <<'EOF'
+#!/bin/sh
+# Report this Pi's address to the Mac; stop the timer after the first hour of uptime.
+TARGET=$(head -1 /boot/firmware/froggy-mac.txt 2>/dev/null)
+[ -n "$TARGET" ] || exit 0
+case "$TARGET" in *:*) ;; *) TARGET="$TARGET:8767";; esac
+IPS=$(hostname -I | tr ' ' ',')
+TS=$(date +%s)
+curl -s -m 5 "http://$TARGET/?host=$(hostname)&ip=${IPS}&ts=${TS}" >/dev/null 2>&1 || true
+echo "http://$TARGET/?host=$(hostname)&ip=${IPS}&ts=${TS}" > /boot/firmware/froggy-ip.txt
+UP=$(cut -d. -f1 /proc/uptime)
+[ "$UP" -gt 3600 ] && systemctl stop froggy-phonehome.timer
+exit 0
+EOF
+
+cat > "$B/froggy-phonehome.service" <<'EOF'
+[Unit]
+Description=Froggy Pi phone home (report IP to the Mac)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/froggy-phonehome
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat > "$B/froggy-phonehome.timer" <<'EOF'
+[Unit]
+Description=Froggy Pi phone home every 2 minutes for the first hour
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=120
+AccuracySec=10
+
+[Install]
+WantedBy=timers.target
+EOF
+
+cat > "$B/firstrun.sh" <<EOF
+#!/bin/bash
+set +e
+BOOT=/boot/firmware; [ -d \$BOOT ] || BOOT=/boot
+NEWUSER="$FROGGY_PI_USER"
+HASH="${FROGGY_PASSWORD_HASH:-!}"
+PUBKEY='$PUBKEY'
+
+# Wi-Fi country first (also clears the rfkill soft block), then the hotspot profile
+raspi-config nonint do_wifi_country US
+rfkill unblock all
+if [ -f \$BOOT/hotspot.nmconnection ]; then
+   install -o root -g root -m 600 \$BOOT/hotspot.nmconnection /etc/NetworkManager/system-connections/hotspot.nmconnection
+   rm -f \$BOOT/hotspot.nmconnection
+   systemctl is-active --quiet NetworkManager && nmcli connection reload
+fi
+
+# hostname
+CURRENT_HOSTNAME=\$(cat /etc/hostname | tr -d " \t\n\r")
+if [ -f /usr/lib/raspberrypi-sys-mods/imager_custom ]; then
+   /usr/lib/raspberrypi-sys-mods/imager_custom set_hostname froggy-pi
+else
+   echo froggy-pi >/etc/hostname
+   sed -i "s/127.0.1.1.*\$CURRENT_HOSTNAME/127.0.1.1\tfroggy-pi/g" /etc/hosts
+fi
+
+# user selected by FROGGY_PI_USER (same as userconf.txt; done here so the key can be installed now)
+if [ -f /usr/lib/userconf-pi/userconf ]; then
+   /usr/lib/userconf-pi/userconf "\$NEWUSER" "\$HASH"
+else
+   FIRSTUSER=\$(getent passwd 1000 | cut -d: -f1)
+   if [ -n "\$FIRSTUSER" ] && [ "\$FIRSTUSER" != "\$NEWUSER" ]; then
+      usermod -l "\$NEWUSER" "\$FIRSTUSER"; usermod -m -d "/home/\$NEWUSER" "\$NEWUSER"; groupmod -n "\$NEWUSER" "\$FIRSTUSER"
+   elif [ -z "\$FIRSTUSER" ]; then
+      useradd -m -u 1000 "\$NEWUSER"
+   fi
+   echo "\$NEWUSER:\$HASH" | chpasswd -e
+fi
+rm -f \$BOOT/userconf.txt
+for g in sudo video i2c gpio dialout plugdev; do getent group \$g >/dev/null && usermod -aG \$g \$NEWUSER; done
+
+# ssh + key
+HOMEDIR=\$(getent passwd \$NEWUSER | cut -d: -f6)
+install -o "\$NEWUSER" -m 700 -d "\$HOMEDIR/.ssh"
+echo "\$PUBKEY" > "\$HOMEDIR/.ssh/authorized_keys"
+chown "\$NEWUSER:" "\$HOMEDIR/.ssh/authorized_keys"; chmod 600 "\$HOMEDIR/.ssh/authorized_keys"
+if [ -f /usr/lib/raspberrypi-sys-mods/imager_custom ]; then
+   /usr/lib/raspberrypi-sys-mods/imager_custom enable_ssh
+else
+   systemctl enable ssh
+fi
+
+# timezone
+if [ -f /usr/lib/raspberrypi-sys-mods/imager_custom ]; then
+   /usr/lib/raspberrypi-sys-mods/imager_custom set_timezone America/Detroit
+else
+   rm -f /etc/localtime; echo America/Detroit >/etc/timezone; dpkg-reconfigure -f noninteractive tzdata
+fi
+
+# console boot, no autologin
+raspi-config nonint do_boot_behaviour B1
+
+# phone-home units
+install -m 755 \$BOOT/froggy-phonehome.sh /usr/local/bin/froggy-phonehome
+install -m 644 \$BOOT/froggy-phonehome.service /etc/systemd/system/froggy-phonehome.service
+install -m 644 \$BOOT/froggy-phonehome.timer /etc/systemd/system/froggy-phonehome.timer
+systemctl enable froggy-phonehome.service froggy-phonehome.timer
+
+rm -f \$BOOT/firstrun.sh
+sed -i 's| systemd.run=[^ ]*||g; s| systemd.run_success_action=[^ ]*||g; s| systemd.unit=kernel-command-line.target||g' \$BOOT/cmdline.txt
+grep -q 'cfg80211.ieee80211_regdom=' \$BOOT/cmdline.txt || sed -i 's|\$| cfg80211.ieee80211_regdom=US|' \$BOOT/cmdline.txt
+exit 0
+EOF
+
+# hook firstrun into cmdline.txt the way Raspberry Pi Imager does
+CMD=$(tr -d '\n' < "$B/cmdline.txt" | sed 's| systemd.run.*||')
+printf '%s systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=reboot systemd.unit=kernel-command-line.target\n' "$CMD" > "$B/cmdline.txt"
+
+echo "== boot partition:"; ls -la "$B"
+echo "== cmdline.txt:"; cat "$B/cmdline.txt"
+echo "== config.txt camera/i2c:"; grep -nE 'camera_auto_detect|i2c_arm' "$B/config.txt"
+echo "== firstrun.sh written (credential-bearing content omitted)"
+sync
+diskutil eject "/dev/$DISK"
+echo "== Done, card ejected. Put it in the Pi 3 B+, plug in Ethernet, power on (first boot reboots once)."
+echo "   Then: ssh ${FROGGY_PI_USER}@froggy-pi.local   (SSH key authentication; password login locked unless FROGGY_PASSWORD_HASH is supplied)"

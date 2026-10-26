@@ -1,0 +1,18 @@
+name: Hardware-free checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  motor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest -q motor/test_motor.py tests
+      - run: sudo apt-get update && sudo apt-get install -y zsh
+      - run: bash -n motor/deploy.sh bin/froggy-pi-flash bin/froggy-pi-net
+      - run: zsh -n bin/froggy-motor && zsh -n bin/froggy-cam-live
+      - run: cd motor/debs && sha256sum -c SHA256SUMS

@@ -1,0 +1,138 @@
+{
+  "imported_at": "2026-10-26T14:46:17.708808+00:00",
+  "files": [
+    {
+      "source": "original-project/motor/motor.toml",
+      "destination": "motor/motor.toml",
+      "original_sha256": "ed727ab1f1d7c69619cf2714984129079171aaa79834cba6454e7e8752dff2ef",
+      "imported_sha256": "ed727ab1f1d7c69619cf2714984129079171aaa79834cba6454e7e8752dff2ef"
+    },
+    {
+      "source": "original-project/motor/WIRING.md",
+      "destination": "motor/WIRING.md",
+      "original_sha256": "881804226ee53c19853a0a83d419ef22346302f3f7a8f83ec555f31e298b387a",
+      "imported_sha256": "881804226ee53c19853a0a83d419ef22346302f3f7a8f83ec555f31e298b387a"
+    },
+    {
+      "source": "original-project/motor/froggy_motor.py",
+      "destination": "motor/froggy_motor.py",
+      "original_sha256": "d65e68ecd0392956e7e947f8c9e2869f8c017dd0527500a2af804d3da90b3d39",
+      "imported_sha256": "d65e68ecd0392956e7e947f8c9e2869f8c017dd0527500a2af804d3da90b3d39"
+    },
+    {
+      "source": "original-project/motor/test_motor.py",
+      "destination": "motor/test_motor.py",
+      "original_sha256": "fd029524feedda6f26504bdba6e4c9483045b5bb8c111766ad7e804e6c347328",
+      "imported_sha256": "fd029524feedda6f26504bdba6e4c9483045b5bb8c111766ad7e804e6c347328"
+    },
+    {
+      "source": "original-project/motor/deploy.sh",
+      "destination": "motor/deploy.sh",
+      "original_sha256": "cbe408431b44da2a8b83f4aa1907dad1830a70acc6caa81bf68501f3c5b174b0",
+      "imported_sha256": "ba5a82fab2a5c064d0028f8117cb78605847958fd9ecb4e8e027ed330afe1697"
+    },
+    {
+      "source": "original-project/motor/schematic.png",
+      "destination": "motor/schematic.png",
+      "original_sha256": "c4ca22e7df409b6b768c5f84e9e73d60b933d9cab5784b2680f6f6b6bff1a6ee",
+      "imported_sha256": "c4ca22e7df409b6b768c5f84e9e73d60b933d9cab5784b2680f6f6b6bff1a6ee"
+    },
+    {
+      "source": "original-project/motor/TEST-PLAN.md",
+      "destination": "motor/TEST-PLAN.md",
+      "original_sha256": "d1d9fbb6910819f23e06717eb97784c0b2d5ce58f716e372c0db9ebe735622f1",
+      "imported_sha256": "d1d9fbb6910819f23e06717eb97784c0b2d5ce58f716e372c0db9ebe735622f1"
+    },
+    {
+      "source": "original-project/motor/debs/python3-pigpio_1.79-1+rpt1_all.deb",
+      "destination": "motor/debs/python3-pigpio_1.79-1+rpt1_all.deb",
+      "original_sha256": "a32d85d6ec327cf2ab075ab38ddf9b54cf193cbeb356ee23a1baeb161df46af9",
+      "imported_sha256": "a32d85d6ec327cf2ab075ab38ddf9b54cf193cbeb356ee23a1baeb161df46af9"
+    },
+    {
+      "source": "original-project/motor/debs/pigpiod_1.79-1+rpt1_arm64.deb",
+      "destination": "motor/debs/pigpiod_1.79-1+rpt1_arm64.deb",
+      "original_sha256": "fcd0f97f497b58b8beb9780d0241561b443466f6416fabc00dc67466da9eb4e3",
+      "imported_sha256": "fcd0f97f497b58b8beb9780d0241561b443466f6416fabc00dc67466da9eb4e3"
+    },
+    {
+      "source": "original-project/motor/debs/pigpio-tools_1.79-1+rpt1_arm64.deb",
+      "destination": "motor/debs/pigpio-tools_1.79-1+rpt1_arm64.deb",
+      "original_sha256": "27381f19eca3bfed85945f7da616220f4a5c27c0c05e1a11cc12576d9db8a0a0",
+      "imported_sha256": "27381f19eca3bfed85945f7da616220f4a5c27c0c05e1a11cc12576d9db8a0a0"
+    },
+    {
+      "source": "original-project/motor/debs/libpigpio1_1.79-1+rpt1_arm64.deb",
+      "destination": "motor/debs/libpigpio1_1.79-1+rpt1_arm64.deb",
+      "original_sha256": "eb71bb889f79926c0d2c5078f2b0fe087a6e8f0c6e0c47659a2a5a072e8e831e",
+      "imported_sha256": "eb71bb889f79926c0d2c5078f2b0fe087a6e8f0c6e0c47659a2a5a072e8e831e"
+    },
+    {
+      "source": "original-project/motor/debs/SHA256SUMS",
+      "destination": "motor/debs/SHA256SUMS",
+      "original_sha256": "9cfaf0dbc21c2c17ffb493f46f9d46104d43bc1334a9e8ee8a8ddaf6067532b0",
+      "imported_sha256": "9cfaf0dbc21c2c17ffb493f46f9d46104d43bc1334a9e8ee8a8ddaf6067532b0"
+    },
+    {
+      "source": "original-project/motor/logs/ui-ramp-20261021-114134.csv",
+      "destination": "motor/logs/ui-ramp-20261021-114134.csv",
+      "original_sha256": "d7f041f92d59cf3708f5cdb3de9fe707322802553b23a9e73a58b41f8318f87a",
+      "imported_sha256": "d7f041f92d59cf3708f5cdb3de9fe707322802553b23a9e73a58b41f8318f87a"
+    },
+    {
+      "source": "original-project/motor/logs/ui-ramp-20261021-104659.csv",
+      "destination": "motor/logs/ui-ramp-20261021-104659.csv",
+      "original_sha256": "6e3f385cb108e3b62b739abbd7ef0347025802c42bbdd3d71a6e81ce3b8b5274",
+      "imported_sha256": "6e3f385cb108e3b62b739abbd7ef0347025802c42bbdd3d71a6e81ce3b8b5274"
+    },
+    {
+      "source": "original-project/motor/logs/ui-ramp-20261021-113938.csv",
+      "destination": "motor/logs/ui-ramp-20261021-113938.csv",
+      "original_sha256": "d072c0890fb9e82823d95b6a8f1d48cb1cf8095176c947469227cd1fa67fb321",
+      "imported_sha256": "d072c0890fb9e82823d95b6a8f1d48cb1cf8095176c947469227cd1fa67fb321"
+    },
+    {
+      "source": "original-project/motor/logs/ui-ramp-20261021-104614.csv",
+      "destination": "motor/logs/ui-ramp-20261021-104614.csv",
+      "original_sha256": "80733a9077d0749312f07de6c35345f5e862881429d9b81e0dd61c60400ceddc",
+      "imported_sha256": "80733a9077d0749312f07de6c35345f5e862881429d9b81e0dd61c60400ceddc"
+    },
+    {
+      "source": "original-project/bin/froggy-motor",
+      "destination": "bin/froggy-motor",
+      "original_sha256": "0d72fb62437291ca5118a1811adf5802a667aede6c8bace13c264815dfef4cd0",
+      "imported_sha256": "a395cbd87529a986533f53f883eeb9cf8385206a841103d90560baa3e7bf991f"
+    },
+    {
+      "source": "original-project/bin/froggy-pi-net",
+      "destination": "bin/froggy-pi-net",
+      "original_sha256": "0b6b8618277236146149e5faebe5ca3f56a9052f1279b0af69c6585706b46764",
+      "imported_sha256": "f9331705bc63120dc36497d3ad70b08b56fefc6db98c6a41864f20dccb89e9e3"
+    },
+    {
+      "source": "original-project/bin/froggy-cam-latency",
+      "destination": "bin/froggy-cam-latency",
+      "original_sha256": "265fb345fd0e2b29f3d5c6d5407d0e3fce42079437cd6e3a3f5c3baec31ed693",
+      "imported_sha256": "d83624fd563e3b5777da58cc129083d94e12a50861662848d386d39283d2c052"
+    },
+    {
+      "source": "original-project/bin/froggy-cam-live",
+      "destination": "bin/froggy-cam-live",
+      "original_sha256": "dfd130e2b5617d04fcefe38b75940b8dfcb8388903c8af5fcd5bf47e3b8c0bf0",
+      "imported_sha256": "4e245cfd0f63f7572a43b7ae9b3f180397f76b22d2646ea31a033a41ccd57c02"
+    },
+    {
+      "source": "original-project/bin/froggy-pi-flash",
+      "destination": "bin/froggy-pi-flash",
+      "original_sha256": "35345dd9d4506658c543550a1bd0bd28771f5b3db8eb79a6638427e8dd993cda",
+      "imported_sha256": "7a055832a7a45cd852eca745835c7e746831d555b264524f2403f761eb4b4255"
+    },
+    {
+      "source": "original-project/bin/froggy-motor-song",
+      "destination": "bin/froggy-motor-song",
+      "original_sha256": "933729b779a80c31ea0e767bfda09772318cf3675a7cec00c178073e4d0b5db1",
+      "imported_sha256": "933729b779a80c31ea0e767bfda09772318cf3675a7cec00c178073e4d0b5db1"
+    }
+  ],
+  "note": "Historical import hashes; public preparation changes are recorded in Git. Local source paths are intentionally omitted."
+}

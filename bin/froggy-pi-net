@@ -1,0 +1,422 @@
+#!/bin/bash
+export FROGGY_PI_USER="${FROGGY_PI_USER:-froggy}"
+[[ "$FROGGY_PI_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || { echo "Invalid FROGGY_PI_USER" >&2; exit 2; }
+# froggy-pi-net: put the Froggy test Pi (froggy-pi, Pi 3 B+, Bookworm + NetworkManager) on MWireless
+# from the SD card, with phone-home to this Mac and Tailscale as the off-campus / isolation fallback.
+# Modes: --sdcard [--boot DIR] [--mac-host HOST[:PORT]] | --listen [--port N] [--once] | --status | --help
+set -euo pipefail
+umask 077
+
+CFG="$HOME/.config/froggy"
+PORT=8767
+
+usage() {
+cat <<'EOF'
+froggy-pi-net: get froggy-pi onto the campus Wi-Fi (MWireless) and tell this Mac its address.
+
+  froggy-pi-net --sdcard [--boot /Volumes/bootfs] [--mac-host HOST[:PORT]]
+      With the Pi's SD card in this Mac. Asks for your uniqname and UMICH password
+      (or reads FROGGY_UNIQNAME / FROGGY_PI_PASSWORD), then writes to the card's boot partition:
+        mwireless.nmconnection   NetworkManager keyfile per the U-M ITS Linux guide
+                                 (WPA2 Enterprise, PEAP, MSCHAPv2, USERTrust RSA CA,
+                                 priority 20 so campus beats the hotspot profile at 10)
+        froggy-mac.txt           phone-home target, "<this Mac's en0 IP>:8767" (edit it later
+                                 with the card in; one HOST:PORT per line, all are tried)
+        froggy-net-firstboot.sh  one-shot first-boot script hooked into cmdline.txt
+      The password goes only onto the card, never onto this Mac. On the real card it
+      unmounts /Volumes/bootfs at the end.
+      On the Pi's next boot the script installs the profile (mode 600), points the phone-home
+      at froggy-mac.txt (every 60 s for the first hour, then every 10 min, forever), installs
+      Tailscale once internet is up, then removes its hook and reboots.
+      Log on the card: froggy-net.log. Last report on the card: froggy-ip.txt.
+
+  froggy-pi-net --listen [--port 8767] [--once]
+      Foreground listener for the Pi's phone-home. Prints one line per report and writes
+      ~/.config/froggy/pi-host: the MagicDNS name froggy-pi when Tailscale is Running, else the
+      campus IP. The campus IP also goes to pi-campus, the 100.x IP to pi-tailscale.
+      froggy-cam-live uses pi-host when FROGGY_PI is unset.
+      --once exits after the first report.
+
+  froggy-pi-net --status
+      Prints the saved Pi address(es) and pings them.
+
+Tailscale (works off campus and through MWireless client isolation):
+  Without a key the Pi asks Tailscale for a login link; it shows up in --listen output
+  (and in froggy-tailscale-url.txt on the card). Open it once to add the Pi to your tailnet.
+  To skip that, make a one-off auth key at https://login.tailscale.com/admin/settings/keys
+  and save it as a plain text file named froggy-tailscale-authkey on the card's boot
+  partition (next to cmdline.txt) before the Pi boots. The Pi uses it once and deletes it.
+  This Mac needs Tailscale too to reach the Pi's 100.x address.
+EOF
+}
+
+die() { echo "froggy-pi-net: $*" >&2; exit 1; }
+
+# ---------------------------------------------------------------- --sdcard
+sdcard() {
+  local BOOT=/Volumes/bootfs MACHOST=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --boot) BOOT="${2:?--boot needs a directory}"; shift 2;;
+      --mac-host) MACHOST="${2:?--mac-host needs HOST[:PORT]}"; shift 2;;
+      *) die "unknown option for --sdcard: $1";;
+    esac
+  done
+  BOOT="${BOOT%/}"
+  [ -f "$BOOT/cmdline.txt" ] || die "$BOOT/cmdline.txt not found; is the Pi's SD card in and mounted?"
+  local REAL=0; [ "$BOOT" = /Volumes/bootfs ] && REAL=1
+  if [ $REAL = 1 ]; then
+    [ -f "$BOOT/config.txt" ] && [ -f "$BOOT/kernel8.img" ] || die "$BOOT does not look like a Raspberry Pi boot partition"
+  fi
+
+  # refuse to bury a different first-boot hook that has not run yet
+  if grep -q 'systemd.run=' "$BOOT/cmdline.txt" && ! grep -q 'systemd.run=/boot/firmware/froggy-net-firstboot.sh' "$BOOT/cmdline.txt"; then
+    die "cmdline.txt already has another first-boot hook ($(grep -o 'systemd.run=[^ ]*' "$BOOT/cmdline.txt")); boot the Pi once first"
+  fi
+
+  # credentials: env first, else ask on the terminal; the password is never echoed or saved on the Mac
+  local UNIQ="${FROGGY_UNIQNAME:-}" PW="${FROGGY_PI_PASSWORD:-}"
+  if [ -z "$UNIQ" ]; then
+    if [ -r /dev/tty ]; then read -r -p "U-M uniqname: " UNIQ < /dev/tty || true; fi
+    [ -n "$UNIQ" ] || die "set FROGGY_UNIQNAME or enter your campus login"
+  fi
+  if [ -z "$PW" ]; then
+    [ -r /dev/tty ] || die "no terminal to ask for the password; set FROGGY_PI_PASSWORD"
+    read -r -s -p "UMICH password for $UNIQ (not shown, goes only onto the card): " PW < /dev/tty; echo
+  fi
+  [ -n "$PW" ] || die "empty password"
+  # ITS guide: Username is the U-M email address
+  local IDENT="$UNIQ"; case "$IDENT" in *@*) ;; *) IDENT="$IDENT@umich.edu";; esac
+  # GKeyFile string escaping (backslash, leading space); printf is a builtin so the password never hits argv
+  local PWE; PWE=$(printf '%s' "$PW" | sed -e 's/\\/\\\\/g' -e 's/^ /\\s/')
+
+  # phone-home target
+  if [ -z "$MACHOST" ]; then
+    MACHOST=$(ipconfig getifaddr en0 2>/dev/null || true)
+    [ -n "$MACHOST" ] || die "could not read this Mac's en0 address; pass --mac-host HOST[:PORT]"
+  fi
+  case "$MACHOST" in *:*) ;; *) MACHOST="$MACHOST:$PORT";; esac
+
+  umask 077
+  {
+    printf '[connection]\nid=mwireless\ntype=wifi\nautoconnect=true\nautoconnect-priority=20\n\n'
+    printf '[wifi]\nssid=MWireless\nmode=infrastructure\n\n'
+    printf '[wifi-security]\nkey-mgmt=wpa-eap\n\n'
+    printf '[802-1x]\neap=peap;\nphase2-auth=mschapv2\nidentity=%s\npassword=%s\nca-cert=/etc/ssl/certs/USERTrust_RSA_Certification_Authority.pem\n\n' "$IDENT" "$PWE"
+    printf '[ipv4]\nmethod=auto\n\n[ipv6]\nmethod=auto\n'
+  } > "$BOOT/mwireless.nmconnection"
+  PW=""; PWE=""
+  umask 022
+  printf '%s\n' "$MACHOST" > "$BOOT/froggy-mac.txt"
+
+  cat > "$BOOT/froggy-net-firstboot.sh" <<'FIRSTBOOT'
+#!/bin/bash
+# froggy-net-firstboot.sh (written by froggy-pi-net on the Mac): MWireless profile, phone-home v2,
+# Tailscale. Runs once via cmdline.txt systemd.run, logs to froggy-net.log on the boot partition.
+set +e
+BOOT=/boot/firmware; [ -d "$BOOT" ] || BOOT=/boot
+LOG="$BOOT/froggy-net.log"
+exec >>"$LOG" 2>&1
+log() { echo "$(date '+%F %T') firstboot: $*"; }
+log "== froggy-net-firstboot start (kernel $(uname -r))"
+
+# 1. MWireless keyfile
+NMDIR=/etc/NetworkManager/system-connections
+CA=/etc/ssl/certs/USERTrust_RSA_Certification_Authority.pem
+if [ -f "$BOOT/mwireless.nmconnection" ]; then
+  install -d -m 700 "$NMDIR"
+  if install -o root -g root -m 600 "$BOOT/mwireless.nmconnection" "$NMDIR/mwireless.nmconnection"; then
+    rm -f "$BOOT/mwireless.nmconnection"
+    log "installed $NMDIR/mwireless.nmconnection (600) and removed it from the card"
+  else
+    log "ERROR: install of mwireless.nmconnection failed; left on the card"
+  fi
+else
+  log "no mwireless.nmconnection on the card (already installed?)"
+fi
+if [ -f "$NMDIR/mwireless.nmconnection" ]; then
+  if [ -e "$CA" ]; then
+    log "CA cert present: $CA"
+  else
+    log "WARNING: $CA not found; falling back to the system bundle /etc/ssl/certs/ca-certificates.crt"
+    sed -i 's|^ca-cert=.*|ca-cert=/etc/ssl/certs/ca-certificates.crt|' "$NMDIR/mwireless.nmconnection"
+  fi
+  log "profile: $(grep -E '^(id|ssid|autoconnect-priority|key-mgmt|eap|phase2-auth|identity|ca-cert)=' "$NMDIR/mwireless.nmconnection" | tr '\n' ' ')"
+fi
+log "system-connections now: $(ls "$NMDIR" | tr '\n' ' ')"
+
+# 2. phone-home v2: target from froggy-mac.txt every run, reports host/ip/uptime/tailscale
+cat > /usr/local/bin/froggy-phonehome <<'PHONEHOME'
+#!/bin/sh
+# froggy-phonehome v2 (froggy-pi-net): report this Pi to the Mac(s) listed in froggy-mac.txt.
+BOOT=/boot/firmware; [ -d "$BOOT" ] || BOOT=/boot
+HOST=$(hostname)
+IPS=$(hostname -I 2>/dev/null | tr -s ' ' ',' | sed 's/,$//')
+TS=$(date +%s)
+UP=$(cut -d. -f1 /proc/uptime)
+TSTATE=none; TURL=""
+if command -v tailscale >/dev/null 2>&1; then
+  J=$(tailscale status --json --peers=false 2>/dev/null)
+  TSTATE=$(printf '%s\n' "$J" | sed -n 's/.*"BackendState": *"\([^"]*\)".*/\1/p' | head -1)
+  [ -n "$TSTATE" ] || TSTATE=unknown
+  TURL=$(printf '%s\n' "$J" | sed -n 's/.*"AuthURL": *"\([^"]*\)".*/\1/p' | head -1)
+fi
+if [ -z "$TURL" ] && [ "$TSTATE" != Running ] && [ -f "$BOOT/froggy-tailscale-url.txt" ]; then
+  TURL=$(grep -o 'https://login.tailscale.com/[^[:space:]]*' "$BOOT/froggy-tailscale-url.txt" | tail -1)
+fi
+OUT="host=$HOST ip=$IPS ts=$TS uptime=$UP tailscale=$TSTATE ts_url=$TURL"
+if [ -f "$BOOT/froggy-mac.txt" ]; then
+  for T in $(grep -v '^[[:space:]]*#' "$BOOT/froggy-mac.txt" | tr -d '\r'); do
+    if curl -s -m 5 -o /dev/null -G "http://$T/" --data-urlencode "host=$HOST" --data-urlencode "ip=$IPS" \
+         --data-urlencode "ts=$TS" --data-urlencode "uptime=$UP" --data-urlencode "tailscale=$TSTATE" \
+         --data-urlencode "ts_url=$TURL"; then R=ok; else R=fail; fi
+    OUT="$OUT
+http://$T/?host=$HOST&ip=$IPS&ts=$TS&uptime=$UP&tailscale=$TSTATE&ts_url=$TURL  [$R]"
+  done
+else
+  OUT="$OUT
+(no $BOOT/froggy-mac.txt, nothing sent)"
+fi
+printf '%s\n' "$OUT" > "$BOOT/froggy-ip.txt"
+# after the first hour: slow the timer to every 10 min (runtime drop-in, resets every boot)
+D=/run/systemd/system/froggy-phonehome.timer.d
+if [ "$UP" -gt 3600 ] && [ ! -f "$D/slow.conf" ]; then
+  mkdir -p "$D"
+  printf '[Timer]\nOnBootSec=\nOnUnitActiveSec=\nOnUnitActiveSec=600\n' > "$D/slow.conf"
+  systemctl daemon-reload
+  systemctl restart --no-block froggy-phonehome.timer
+fi
+exit 0
+PHONEHOME
+chmod 755 /usr/local/bin/froggy-phonehome
+
+cat > /etc/systemd/system/froggy-phonehome.service <<'UNIT'
+[Unit]
+Description=Froggy Pi phone home (report IP and Tailscale state to the Mac)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/froggy-phonehome
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+cat > /etc/systemd/system/froggy-phonehome.timer <<'UNIT'
+[Unit]
+Description=Froggy Pi phone home every 60 s for the first hour, then every 10 min
+
+[Timer]
+OnBootSec=30
+OnUnitActiveSec=60
+AccuracySec=5
+
+[Install]
+WantedBy=timers.target
+UNIT
+log "phone-home v2 installed (target file $BOOT/froggy-mac.txt: $(tr '\n' ' ' < "$BOOT/froggy-mac.txt" 2>/dev/null))"
+
+# 3. Tailscale: install once internet is up, then tailscale up
+cat > /usr/local/bin/froggy-tailscale <<'TSCRIPT'
+#!/bin/bash
+BOOT=/boot/firmware; [ -d "$BOOT" ] || BOOT=/boot
+exec >>"$BOOT/froggy-net.log" 2>&1
+log() { echo "$(date '+%F %T') froggy-tailscale: $*"; }
+if ! command -v tailscale >/dev/null 2>&1; then
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    if curl -fsS -m 15 -o /dev/null https://tailscale.com/install.sh; then
+      log "internet up, installing Tailscale (try $i)"
+      curl -fsSL https://tailscale.com/install.sh | sh && command -v tailscale >/dev/null 2>&1 && break
+      log "install attempt $i failed"
+    else
+      log "no internet yet (try $i of 10)"
+    fi
+    sleep 30
+  done
+fi
+command -v tailscale >/dev/null 2>&1 || { log "Tailscale not installed after 10 tries; will retry next boot"; exit 1; }
+systemctl enable --now tailscaled
+sleep 3
+STATE=$(tailscale status --json --peers=false 2>/dev/null | sed -n 's/.*"BackendState": *"\([^"]*\)".*/\1/p' | head -1)
+if [ "$STATE" = Running ]; then
+  log "already logged in ($(tailscale ip -4 2>/dev/null | head -1))"; rm -f "$BOOT/froggy-tailscale-url.txt"; exit 0
+fi
+if [ -f "$BOOT/froggy-tailscale-authkey" ]; then
+  KEY=$(tr -d ' \r\n' < "$BOOT/froggy-tailscale-authkey")
+  rm -f "$BOOT/froggy-tailscale-authkey"
+  log "auth key found on the card (deleted from the card), running tailscale up"
+  if tailscale up --hostname froggy-pi --auth-key="$KEY" --timeout=120s; then
+    log "tailscale up OK: $(tailscale ip -4 2>/dev/null | head -1)"; rm -f "$BOOT/froggy-tailscale-url.txt"
+  else
+    log "tailscale up with the auth key failed"
+  fi
+  KEY=""
+else
+  log "no auth key; asking Tailscale for a login link"
+  tailscale up --hostname froggy-pi --qr=false --timeout=90s > /run/froggy-ts-up.txt 2>&1
+  URL=$(grep -o 'https://login.tailscale.com/[^[:space:]]*' /run/froggy-ts-up.txt | tail -1)
+  if [ -n "$URL" ]; then echo "$URL" > "$BOOT/froggy-tailscale-url.txt"; log "login URL: $URL"
+  else log "no login URL captured: $(tr '\n' ' ' < /run/froggy-ts-up.txt)"; fi
+fi
+/usr/local/bin/froggy-phonehome
+exit 0
+TSCRIPT
+chmod 755 /usr/local/bin/froggy-tailscale
+cat > /etc/systemd/system/froggy-tailscale.service <<'UNIT'
+[Unit]
+Description=Froggy Pi: install Tailscale once online, then tailscale up
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/froggy-tailscale
+TimeoutStartSec=25min
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl enable froggy-phonehome.service froggy-phonehome.timer froggy-tailscale.service
+log "enabled froggy-phonehome.service/.timer and froggy-tailscale.service"
+
+# 4. remove the hook and reboot (systemd.run_success_action=reboot)
+sed -i 's| systemd.run=[^ ]*||g; s| systemd.run_success_action=[^ ]*||g; s| systemd.unit=kernel-command-line.target||g' "$BOOT/cmdline.txt"
+log "cmdline.txt hook removed: $(cat "$BOOT/cmdline.txt")"
+log "== froggy-net-firstboot done, rebooting"
+sync
+exit 0
+FIRSTBOOT
+
+  # hook into cmdline.txt the way froggy-pi-flash / Raspberry Pi Imager does, once
+  local HOOK=' systemd.run=/boot/firmware/froggy-net-firstboot.sh systemd.run_success_action=reboot systemd.unit=kernel-command-line.target'
+  local HOOKED=already
+  if ! grep -q 'systemd.run=/boot/firmware/froggy-net-firstboot.sh' "$BOOT/cmdline.txt"; then
+    local CMD; CMD=$(tr -d '\n' < "$BOOT/cmdline.txt")
+    printf '%s%s\n' "$CMD" "$HOOK" > "$BOOT/cmdline.txt"
+    HOOKED=added
+  fi
+  sync
+
+  echo "Written to $BOOT:"
+  echo "  mwireless.nmconnection  SSID MWireless, WPA2 Enterprise PEAP/MSCHAPv2, user $IDENT,"
+  echo "                          CA USERTrust RSA, priority 20 (hotspot stays at 10). Password: on the card only."
+  echo "  froggy-mac.txt          phone-home target $MACHOST"
+  echo "  froggy-net-firstboot.sh first-boot script (cmdline.txt hook $HOOKED)"
+  if [ -f "$BOOT/froggy-tailscale-authkey" ]; then
+    echo "  froggy-tailscale-authkey found: the Pi will join your tailnet without a login link"
+  fi
+  echo "Next: put the card in the Pi and power it on. It boots, installs the profile, reboots once,"
+  echo "then joins MWireless and reports here. Run: froggy-pi-net --listen"
+  if [ $REAL = 1 ]; then
+    diskutil unmount /Volumes/bootfs && echo "card is safe to remove"
+  fi
+}
+
+# ---------------------------------------------------------------- --listen
+listen() {
+  local ONCE=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --port) PORT="${2:?--port needs a number}"; shift 2;;
+      --once) ONCE=1; shift;;
+      *) die "unknown option for --listen: $1";;
+    esac
+  done
+  mkdir -p "$CFG"
+  exec /usr/bin/env python3 -I - "$PORT" "$ONCE" "$CFG" <<'PY'
+import sys, os, threading, ipaddress, datetime
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
+port, once, cfg = int(sys.argv[1]), sys.argv[2] == "1", sys.argv[3]
+
+def pick(ips):
+    campus = ts = None
+    for s in ips:
+        try:
+            a = ipaddress.ip_address(s)
+        except ValueError:
+            continue
+        if a.version != 4 or a.is_loopback or a.is_link_local:
+            continue
+        if a in ipaddress.ip_network("100.64.0.0/10"):
+            ts = ts or s
+        else:
+            campus = campus or s
+    return campus, ts
+
+def save(name, val):
+    p = os.path.join(cfg, name)
+    with open(p + ".tmp", "w") as f:
+        f.write(val + "\n")
+    os.replace(p + ".tmp", p)
+
+class H(BaseHTTPRequestHandler):
+    def do_GET(self):
+        q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+        self.send_response(200); self.send_header("Content-Type", "text/plain"); self.end_headers()
+        self.wfile.write(b"ok\n")
+        if "host" not in q:
+            return
+        ips = [s for s in q.get("ip", "").replace(" ", ",").split(",") if s]
+        campus, ts = pick(ips)
+        if campus:
+            save("pi-campus", campus)
+        if ts:
+            save("pi-tailscale", ts)
+        # Tailscale up: the MagicDNS name is stable across networks, so pi-host gets the name
+        target = q["host"] if q.get("tailscale") == "Running" else (campus or ts)
+        if target:
+            save("pi-host", target)
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        line = f"{now}  {q['host']}  ips={','.join(ips) or '(none)'}  from={self.client_address[0]}  tailscale={q.get('tailscale', '?')}"
+        if q.get("uptime"):
+            line += f"  up={q['uptime']}s"
+        if q.get("ts_url"):
+            line += f"  LOGIN: {q['ts_url']}"
+        line += f"  -> pi-host={target or '(unchanged)'}"
+        print(line, flush=True)
+        if once:
+            threading.Thread(target=self.server.shutdown, daemon=True).start()
+    def log_message(self, *a):
+        pass
+
+srv = HTTPServer(("0.0.0.0", port), H)
+print(f"listening on 0.0.0.0:{port} for froggy-pi phone-home (Ctrl-C to stop)", flush=True)
+try:
+    srv.serve_forever()
+except KeyboardInterrupt:
+    pass
+srv.server_close()
+PY
+}
+
+# ---------------------------------------------------------------- --status
+status() {
+  local rc=1 f h
+  if [ ! -s "$CFG/pi-host" ]; then
+    echo "no Pi address saved yet in $CFG/pi-host; run: froggy-pi-net --listen"; return 1
+  fi
+  h=$(head -1 "$CFG/pi-host")
+  printf 'pi-host:      %s (saved %s)\n' "$h" "$(stat -f '%Sm' "$CFG/pi-host")"
+  if ping -c 2 -t 4 "$h" >/dev/null 2>&1; then echo "  ping: answers"; else echo "  ping: no answer"; fi
+  local name; name=$(ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "${FROGGY_PI_USER}@$h" hostname 2>/dev/null || true)
+  if [ -n "$name" ]; then echo "  ssh: ok (remote hostname $name) -> $h reachable"; rc=0
+  else echo "  ssh: failed -> $h not reachable over ssh"; fi
+  for f in pi-campus pi-tailscale; do
+    [ -s "$CFG/$f" ] || continue
+    h=$(head -1 "$CFG/$f")
+    if ping -c 1 -t 3 "$h" >/dev/null 2>&1; then r="answers ping"; else r="no ping answer"; fi
+    printf '%-13s %s (%s)\n' "$f:" "$h" "$r"
+  done
+  return $rc
+}
+
+case "${1:-}" in
+  --sdcard) shift; sdcard "$@";;
+  --listen) shift; listen "$@";;
+  --status) shift; status;;
+  -h|--help|help) usage;;
+  "") usage; exit 1;;
+  *) usage >&2; exit 1;;
+esac

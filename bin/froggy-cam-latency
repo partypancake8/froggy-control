@@ -1,0 +1,561 @@
+#!/usr/bin/env python3
+"""froggy-cam-latency: automatic glass-to-glass latency of a Froggy Pi camera stream, no clock reading by eye.
+
+  froggy-cam-latency [--host froggy-zero] [--seconds 20] [--port 8888] [--decoder lavc|ffmpeg] [--out DIR]
+  froggy-cam-latency --self-test [--delay-ms 120] [--seconds 8] [--decoder lavc|ffmpeg]
+  froggy-cam-latency --stop [--host H]
+
+How it works (live): this Mac opens one window with a large QR code (462 px, black on white) that encodes
+the current time in ms, redrawn at 30 Hz, plus a big readable clock. Point the Pi camera at it. The Pi
+streams H.264 exactly like froggy-cam-live (same rpicam-vid command, UDP to this Mac on :8888). This Mac
+decodes every frame and OpenCV finds and decodes the QR in it. latency = now_ms (taken the moment the
+decoded frame is in hand) - the ms inside the QR. Both times come from this Mac's clock, so no clock sync
+is needed. QR detection time is reported separately and is not counted. Counted: QR window redraw and
+display, camera exposure and readout, Pi encode, Wi-Fi, Mac receive and H.264 decode. Not counted: a
+viewer's own draw (about one display refresh). The 30 Hz QR refresh adds 0 to 33 ms (17 ms mean).
+
+Decoders (--decoder):
+  lavc    default. UDP received here; rpicam-vid sends each encoded frame as one datagram (up to 65507
+          bytes), so a datagram shorter than that ends the frame and goes straight into libavcodec's h264
+          decoder (Homebrew ffmpeg's library via ctypes, low_delay, 1 thread). No added frame of delay.
+  ffmpeg  the ffmpeg CLI with froggy-cam-live's ffplay input flags, piped to python as raw gray frames.
+          Measured on this Mac: it holds about two frames (+70 ms at 30 fps: the raw H.264 parser waits
+          for the next frame's start, and the CLI holds one more), which ffplay's view also pays.
+
+--self-test: no Pi, no camera, no window. Synthetic 960x540 frames of the QR clock are held for a known
+delay (default 120 ms), then encoded by ffmpeg (libx264 baseline, zerolatency) and sent over UDP to
+127.0.0.1:8899 (one write per frame, 9000-byte datagrams, the macOS send limit) into the same receive,
+decode and QR path. Prints the injected delay and the measured median; exits 0 when they agree within 20 ms.
+
+Host: --host, else $FROGGY_PI, else ~/.config/froggy/pi-host, else froggy-pi.local (as froggy-cam-live).
+SSH user: FROGGY_PI_USER (default froggy). Ctrl-C stops both ends; --stop kills the Pi's rpicam-vid the way froggy-cam-live --stop does.
+Results: testing/<date>-<host>-latency/ (latency-HHMMSS.csv, summary-HHMMSS.txt, NOTES.md).
+Self-test results: ~/.cache/froggy/latency-selftest/.
+
+Python: /opt/homebrew/bin/python3 (Homebrew 3.14 with cv2 5.0.0 and numpy; the froggy venv has no cv2).
+QR drawing: the qrcode library if installed, else OpenCV's QRCodeEncoder, else segno (printed at start).
+QR reading: cv2.QRCodeDetector.
+"""
+import re
+import argparse, ctypes, ctypes.util, datetime, os, queue, shutil, signal, socket, subprocess, sys, threading, time
+import numpy as np
+import cv2
+
+PI_USER = os.environ.get("FROGGY_PI_USER", "froggy")
+if not re.fullmatch(r"[a-z_][a-z0-9_-]*", PI_USER):
+    raise SystemExit("Invalid FROGGY_PI_USER")
+
+W, H, FPS = 960, 540, 30
+ENC = ("-t 0 -n --width 960 --height 540 --framerate 30 --rotation 180 --inline --intra 15 "
+       "--bitrate 1500000 --profile baseline --level 4")   # froggy-cam-live's encoder settings
+FFMPEG = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+RUNLOG = os.environ.get("FROGGY_RUN_DIR", os.path.expanduser("~/.cache/froggy"))
+TESTING = os.environ.get("FROGGY_TESTING_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "testing"))
+PREFIX = "FROG"
+QR_VERSION, QR_BORDER = 2, 4
+WARMUP_S = 1.0          # samples in the first second after the first frame are startup catch-up, not counted
+RPICAM_DGRAM = 65507    # rpicam-apps NetOutput MAX_UDP_SIZE: one datagram per frame unless bigger than this
+SELFTEST_DGRAM = 9000   # macOS net.inet.udp.maxdgram is 9216, so the local sender uses 9000
+
+def now_ms():
+    return time.time() * 1000.0
+
+# ------------------------------------------------------------------ QR drawing (qrcode > cv2 > segno)
+def make_qr_backend():
+    try:
+        import qrcode
+        def m(text):
+            q = qrcode.QRCode(version=QR_VERSION, error_correction=qrcode.constants.ERROR_CORRECT_M,
+                              box_size=1, border=QR_BORDER)
+            q.add_data(text); q.make(fit=False)
+            return np.array(q.get_matrix(), dtype=bool)
+        m(PREFIX + "0" * 13)
+        return "qrcode library", m
+    except Exception:
+        pass
+    try:
+        p = cv2.QRCodeEncoder.Params(); p.version = QR_VERSION
+        enc = cv2.QRCodeEncoder.create(p)
+        def m(text):
+            core = enc.encode(text) < 128
+            ys, xs = np.nonzero(core)
+            core = core[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+            return np.pad(core, QR_BORDER, constant_values=False)
+        m(PREFIX + "0" * 13)
+        return "OpenCV QRCodeEncoder", m
+    except Exception:
+        pass
+    import segno
+    def m(text):
+        q = segno.make_qr(text, version=QR_VERSION, error="m")
+        return np.pad(np.array(q.matrix, dtype=np.uint8) == 1, QR_BORDER, constant_values=False)
+    return "segno", m
+
+def qr_gray(matrix, px):
+    g = np.where(matrix, 0, 255).astype(np.uint8)
+    return np.repeat(np.repeat(g, px, axis=0), px, axis=1)
+
+def clock_text(ms):
+    return datetime.datetime.fromtimestamp(ms / 1000.0).strftime("%H:%M:%S.%f")[:-3]
+
+# ------------------------------------------------------------------ libavcodec h264 decoder via ctypes
+class LavcDecoder:
+    """Minimal in-process H.264 decoder. Uses only AVOptions plus the long-stable leading fields of
+    AVPacket (data at +24) and AVFrame (data[0] +0, linesize[0] +64, width +104, height +108)."""
+    def __init__(self):
+        def load(name):
+            for p in (f"/opt/homebrew/lib/lib{name}.dylib", ctypes.util.find_library(name)):
+                if p and os.path.exists(p):
+                    return ctypes.CDLL(p)
+            raise OSError(f"lib{name} not found (brew install ffmpeg)")
+        self.avc, self.avu = load("avcodec"), load("avutil")
+        V, I = ctypes.c_void_p, ctypes.c_int
+        for lib, sigs in ((self.avc, [("avcodec_find_decoder_by_name", V, [ctypes.c_char_p]),
+                                      ("avcodec_alloc_context3", V, [V]), ("avcodec_open2", I, [V, V, V]),
+                                      ("av_packet_alloc", V, []), ("av_new_packet", I, [V, I]),
+                                      ("avcodec_send_packet", I, [V, V]), ("avcodec_receive_frame", I, [V, V]),
+                                      ("av_packet_unref", None, [V])]),
+                          (self.avu, [("av_frame_alloc", V, []), ("av_frame_unref", None, [V]),
+                                      ("av_opt_set", I, [V, ctypes.c_char_p, ctypes.c_char_p, I]),
+                                      ("av_opt_set_int", I, [V, ctypes.c_char_p, ctypes.c_int64, I]),
+                                      ("av_log_set_level", None, [I])])):
+            for name, res, args in sigs:
+                f = getattr(lib, name); f.restype = res; f.argtypes = args
+        self.avu.av_log_set_level(8)   # AV_LOG_FATAL: the first frames before an I-frame are expected errors
+        codec = self.avc.avcodec_find_decoder_by_name(b"h264")
+        if not codec:
+            raise OSError("libavcodec has no h264 decoder")
+        self.ctx = self.avc.avcodec_alloc_context3(codec)
+        self.avu.av_opt_set(self.ctx, b"flags", b"+low_delay", 0)
+        self.avu.av_opt_set_int(self.ctx, b"threads", 1, 0)
+        if self.avc.avcodec_open2(self.ctx, codec, None) < 0:
+            raise OSError("avcodec_open2 failed")
+        self.pkt, self.frame = self.avc.av_packet_alloc(), self.avu.av_frame_alloc()
+
+    def decode(self, au):
+        out = []
+        if self.avc.av_new_packet(self.pkt, len(au)) < 0:
+            return out
+        ctypes.memmove(ctypes.c_void_p.from_address(self.pkt + 24).value, au, len(au))
+        rc = self.avc.avcodec_send_packet(self.ctx, self.pkt)
+        self.avc.av_packet_unref(self.pkt)
+        if rc < 0:
+            return out
+        while self.avc.avcodec_receive_frame(self.ctx, self.frame) == 0:
+            f = self.frame
+            d0 = ctypes.c_void_p.from_address(f).value
+            ls, w, h = (ctypes.c_int.from_address(f + o).value for o in (64, 104, 108))
+            if d0 and w == W and h == H and ls >= W:
+                y = np.frombuffer(ctypes.string_at(d0, ls * h), np.uint8).reshape(h, ls)[:, :W]
+                out.append(np.ascontiguousarray(y))
+            self.avu.av_frame_unref(f)
+        return out
+
+# ------------------------------------------------------------------ receive + decode + QR (live and self-test)
+class Receiver:
+    def __init__(self, port, log_path, decoder="lavc", dgram=RPICAM_DGRAM):
+        self.port, self.decoder, self.dgram = port, decoder, dgram
+        self.samples, self.frames, self.dropped, self.qr_fail, self.bad = [], 0, 0, 0, 0
+        self.first_frame_ms = None
+        self.stop = threading.Event()
+        self.q = queue.Queue(maxsize=4)
+        self.log = open(log_path, "w")
+        self.proc = None
+        if decoder == "lavc":
+            self.dec = LavcDecoder()
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 << 20)
+            except OSError:
+                pass
+            self.sock.bind(("0.0.0.0", port)); self.sock.settimeout(0.2)
+            self.desc = (f"UDP 0.0.0.0:{port} in this script, frame = datagrams up to the first one shorter than "
+                         f"{dgram} bytes, libavcodec h264 (low_delay, 1 thread) via ctypes")
+            threading.Thread(target=self._read_udp, daemon=True).start()
+        else:
+            cmd = [FFMPEG, "-hide_banner", "-loglevel", "warning", "-nostdin",
+                   "-fflags", "nobuffer", "-flags", "low_delay", "-probesize", "100000", "-analyzeduration", "500000",
+                   "-f", "h264", "-i", f"udp://0.0.0.0:{port}?buffer_size=1048576&fifo_size=8192&overrun_nonfatal=1",
+                   "-an", "-vf", f"scale={W}:{H}", "-pix_fmt", "gray", "-fps_mode", "passthrough",
+                   "-flush_packets", "1", "-f", "rawvideo", "pipe:1"]
+            self.desc = " ".join(cmd)
+            self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=self.log, bufsize=0)
+            threading.Thread(target=self._read_ffmpeg, daemon=True).start()
+        self.det = cv2.QRCodeDetector()
+        threading.Thread(target=self._detect, daemon=True).start()
+
+    def _frame(self, img):
+        t = now_ms()                          # the decoded frame is in hand: this is "now"
+        self.frames += 1
+        if self.first_frame_ms is None:
+            self.first_frame_ms = t
+        try:
+            self.q.put_nowait((self.frames, t, img))
+        except queue.Full:
+            self.dropped += 1                 # detector behind: skip this frame, never stall the receiver
+
+    def _read_udp(self):
+        au = bytearray()
+        while not self.stop.is_set():
+            try:
+                d = self.sock.recv(65536)
+            except socket.timeout:
+                continue
+            except OSError:
+                return
+            au += d
+            if len(d) < self.dgram:
+                for y in self.dec.decode(bytes(au)):
+                    self._frame(y)
+                au = bytearray()
+            elif len(au) > 8 << 20:
+                au = bytearray(); self.bad += 1
+
+    def _read_ffmpeg(self):
+        n = W * H
+        out = self.proc.stdout
+        while not self.stop.is_set():
+            buf = bytearray(n); view = memoryview(buf); got = 0
+            while got < n:
+                k = out.readinto(view[got:])
+                if not k:
+                    return
+                got += k
+            self._frame(np.frombuffer(buf, np.uint8).reshape(H, W))
+
+    def _detect(self):
+        while not self.stop.is_set():
+            try:
+                idx, t, img = self.q.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            t0 = time.perf_counter()
+            try:
+                text, _, _ = self.det.detectAndDecode(img)
+            except cv2.error:
+                text = ""
+            dms = (time.perf_counter() - t0) * 1000.0
+            if text and text.startswith(PREFIX) and text[len(PREFIX):].isdigit():
+                q = int(text[len(PREFIX):])
+                warm = (t - self.first_frame_ms) < WARMUP_S * 1000.0
+                self.samples.append((idx, t, q, t - q, dms, warm))
+            else:
+                self.qr_fail += 1
+
+    def counted(self):
+        return [s for s in self.samples if not s[5]]
+
+    def close(self):
+        self.stop.set()
+        if self.proc is not None and self.proc.poll() is None:
+            self.proc.terminate()
+            try:
+                self.proc.wait(3)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+        if self.decoder == "lavc":
+            self.sock.close()
+        self.log.close()
+
+def stats(samples):
+    lat = np.array([s[3] for s in samples], dtype=float)
+    if not len(lat):
+        return None
+    return {"count": len(lat), "median": float(np.median(lat)), "p95": float(np.percentile(lat, 95)),
+            "min": float(lat.min()), "max": float(lat.max()),
+            "unique": len({s[2] for s in samples}),
+            "detect_median": float(np.median([s[4] for s in samples]))}
+
+def running_line(rx, t0):
+    c = rx.counted()
+    last = f"{c[-1][3]:.0f} ms" if c else "-"
+    med = f"{np.median([s[3] for s in c]):.0f} ms" if c else "-"
+    return (f"[{time.time() - t0:5.1f} s] frames {rx.frames}  qr decoded {len(rx.samples)}  "
+            f"no-qr {rx.qr_fail}  last {last}  median so far {med}")
+
+def write_results(outdir, rx, settings_lines, extra_lines, stamp):
+    os.makedirs(outdir, exist_ok=True)
+    csv = os.path.join(outdir, f"latency-{stamp}.csv")
+    with open(csv, "w") as f:
+        f.write("frame,arrival_epoch_ms,qr_epoch_ms,latency_ms,qr_detect_ms,warmup\n")
+        for idx, t, q, lat, dms, warm in rx.samples:
+            f.write(f"{idx},{t:.1f},{q},{lat:.1f},{dms:.1f},{int(warm)}\n")
+    summ = os.path.join(outdir, f"summary-{stamp}.txt")
+    with open(summ, "w") as f:
+        f.write("\n".join(settings_lines + extra_lines) + "\n")
+    return csv, summ
+
+def result_lines(rx, st):
+    lines = [f"frames received {rx.frames}, QR decoded {len(rx.samples)} "
+             f"({len(rx.samples) - len(rx.counted())} in the {WARMUP_S:.0f} s warmup, not counted), "
+             f"no QR found {rx.qr_fail}, skipped while detector busy {rx.dropped}"]
+    if st:
+        lines.append(f"latency over {st['count']} frames ({st['unique']} distinct QR times): "
+                     f"median {st['median']:.0f} ms, p95 {st['p95']:.0f} ms, "
+                     f"min {st['min']:.0f} ms, max {st['max']:.0f} ms")
+        lines.append(f"QR detect time (not counted): median {st['detect_median']:.1f} ms per frame")
+    else:
+        lines.append("latency: no QR decoded, median n/a ms")
+    return lines
+
+# ------------------------------------------------------------------ self-test
+def self_test(args):
+    delay, port = args.delay_ms, 8899
+    name, mk = make_qr_backend()
+    print(f"self-test: synthetic QR clock frames {W}x{H} @ {FPS} fps, injected delay {delay:.0f} ms, "
+          f"libx264 baseline zerolatency -> UDP 127.0.0.1:{port} -> receive + {args.decoder} decode + OpenCV QR")
+    print(f"QR drawn with: {name} (version {QR_VERSION}, {QR_BORDER}-module border); read with cv2.QRCodeDetector")
+    outdir = os.path.join(RUNLOG, "latency-selftest"); os.makedirs(outdir, exist_ok=True)
+    stamp = datetime.datetime.now().strftime("%H%M%S")
+    rx = Receiver(port, os.path.join(outdir, f"rx-{stamp}.log"), args.decoder, SELFTEST_DGRAM)
+    time.sleep(0.5)
+    enc_log = open(os.path.join(outdir, f"ffmpeg-tx-{stamp}.log"), "w")
+    tx = [FFMPEG, "-hide_banner", "-loglevel", "warning", "-f", "rawvideo", "-pix_fmt", "gray",
+          "-s", f"{W}x{H}", "-r", str(FPS), "-i", "pipe:0",
+          "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+          "-profile:v", "baseline", "-g", "15", "-b:v", "1500k", "-pix_fmt", "yuv420p",
+          "-flush_packets", "1", "-f", "h264", f"udp://127.0.0.1:{port}?pkt_size={SELFTEST_DGRAM}"]
+    enc = subprocess.Popen(tx, stdin=subprocess.PIPE, stderr=enc_log, bufsize=0)
+    stop = threading.Event()
+    hold = queue.Queue()
+    qpx = 12
+    def generate():
+        nxt = time.perf_counter()
+        rng = np.random.default_rng(1)
+        while not stop.is_set():
+            t = now_ms()
+            frame = np.full((H, W), 190, np.uint8)
+            g = qr_gray(mk(f"{PREFIX}{int(t)}"), qpx)
+            y0, x0 = (H - g.shape[0]) // 2, 120
+            frame[y0:y0 + g.shape[0], x0:x0 + g.shape[1]] = g
+            cv2.putText(frame, clock_text(t), (x0 + g.shape[1] + 20, H // 2), cv2.FONT_HERSHEY_SIMPLEX, 1.3, 0, 3)
+            frame = cv2.GaussianBlur(frame, (3, 3), 0)          # a little camera softness and noise
+            frame = cv2.add(frame, rng.integers(0, 12, frame.shape, dtype=np.uint8))
+            hold.put((t, frame.tobytes()))
+            nxt += 1.0 / FPS
+            time.sleep(max(0.0, nxt - time.perf_counter()))
+    def release():
+        while not stop.is_set():
+            try:
+                t, b = hold.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            time.sleep(max(0.0, (t + delay) / 1000.0 - time.time()))   # the injected delay
+            try:
+                enc.stdin.write(b)
+            except (BrokenPipeError, ValueError):
+                return
+    threading.Thread(target=generate, daemon=True).start()
+    threading.Thread(target=release, daemon=True).start()
+    t0 = time.time(); last = 0
+    try:
+        while True:
+            time.sleep(0.05)
+            el = time.time() - t0
+            if int(el) > last:
+                last = int(el); print(running_line(rx, t0), flush=True)
+            if rx.first_frame_ms is None and el > 15:
+                print("self-test: no decoded frames after 15 s (logs in " + outdir + ")"); break
+            if rx.first_frame_ms is not None and now_ms() - rx.first_frame_ms > (args.seconds + WARMUP_S) * 1000:
+                break
+    finally:
+        stop.set()
+        try:
+            enc.stdin.close()
+        except Exception:
+            pass
+        try:
+            enc.wait(3)
+        except subprocess.TimeoutExpired:
+            enc.kill()
+        enc_log.close()
+        time.sleep(0.3)
+        rx.close()
+    st = stats(rx.counted())
+    settings = [f"froggy-cam-latency --self-test {datetime.datetime.now():%Y-%m-%d %H:%M:%S}",
+                f"stream: synthetic {W}x{H} @ {FPS} fps gray, libx264 ultrafast zerolatency baseline, GOP 15, "
+                f"1.5 Mbit/s, UDP 127.0.0.1:{port} in {SELFTEST_DGRAM}-byte datagrams",
+                f"decode: {rx.desc}",
+                f"QR: {name}, {qpx} px/module; injected delay {delay:.0f} ms"]
+    lines = result_lines(rx, st)
+    ok = bool(st) and abs(st["median"] - delay) <= 20.0
+    if st:
+        lines.append(f"self-test: injected {delay:.0f} ms, measured median {st['median']:.1f} ms, "
+                     f"difference {st['median'] - delay:+.1f} ms (pipeline overhead) -> "
+                     f"{'PASS' if ok else 'FAIL'} (limit 20 ms)")
+    csv, summ = write_results(outdir, rx, settings, lines, stamp)
+    print("\n".join(settings[1:] + lines))
+    print(f"csv: {csv}\nsummary: {summ}")
+    return 0 if ok else 1
+
+# ------------------------------------------------------------------ live
+def pi_host(args):
+    h = args.host or os.environ.get("FROGGY_PI")
+    if not h:
+        try:
+            h = open(os.path.expanduser("~/.config/froggy/pi-host")).readline().strip()
+        except OSError:
+            h = ""
+    return h or "froggy-pi.local"
+
+def ssh(host, cmd, timeout=20):
+    return subprocess.run(["ssh", "-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=accept-new",
+                           f"{PI_USER}@{host}", cmd], capture_output=True, text=True, timeout=timeout)
+
+def stop_remote(host):
+    subprocess.run(["pkill", "-f", "ffplay.*froggy-pi live"], capture_output=True)
+    try:
+        ssh(host, "pkill -x rpicam-vid; sleep 1; true")
+    except Exception:
+        pass
+
+def mac_addr_toward(host, port):
+    if os.environ.get("FROGGY_MAC"):
+        return os.environ["FROGGY_MAC"]
+    ip = socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_DGRAM)[0][4][0]
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect((ip, port)); return s.getsockname()[0]
+    finally:
+        s.close()
+
+def live(args):
+    import tkinter as tk
+    host, port = pi_host(args), args.port
+    name, mk = make_qr_backend()
+    date = datetime.date.today().isoformat()
+    outdir = args.out or os.path.join(TESTING, f"{date}-{host.split('.')[0]}-latency")
+    stamp = datetime.datetime.now().strftime("%H%M%S")
+    os.makedirs(os.path.join(outdir, "logs"), exist_ok=True)
+    print(f"host {host} (user {PI_USER}); QR drawn with {name}, read with cv2.QRCodeDetector; decoder {args.decoder}")
+    stop_remote(host)
+    try:
+        r = ssh(host, "sudo -n /usr/sbin/iw wlan0 set power_save off 2>/dev/null; hostname; "
+                      "rpicam-vid --version 2>/dev/null | head -1; tr -d '\\0' < /proc/device-tree/model 2>/dev/null")
+    except subprocess.TimeoutExpired:
+        print(f"ssh to {host} timed out"); return 1
+    if r.returncode != 0:
+        print(f"ssh to {host} failed: {r.stderr.strip()}"); return 1
+    info = [l.strip() for l in r.stdout.splitlines() if l.strip()]
+    mac = mac_addr_toward(host, port)
+    print(f"Pi: {' | '.join(info)}")
+    print(f"stream: {host} rpicam-vid {ENC} -o udp://{mac}:{port}")
+    rx = Receiver(port, os.path.join(outdir, "logs", f"rx-{stamp}.log"), args.decoder, RPICAM_DGRAM)
+    done = {"v": False}
+    def finish(*_):
+        done["v"] = True
+    signal.signal(signal.SIGINT, finish); signal.signal(signal.SIGTERM, finish)
+    try:
+        time.sleep(1)
+        ssh(host, f"nohup rpicam-vid {ENC} -o udp://{mac}:{port} > ~/rpicam-vid.log 2>&1 < /dev/null &")
+
+        root = tk.Tk()
+        root.title("froggy-cam-latency QR clock")
+        root.configure(bg="white")
+        px = 14
+        side = (17 + 4 * QR_VERSION + 2 * QR_BORDER) * px
+        img = tk.PhotoImage(width=side, height=side)
+        tk.Label(root, image=img, bg="white", bd=0).pack(padx=30, pady=(30, 10))
+        clock = tk.Label(root, text="", font=("Menlo", 56, "bold"), fg="black", bg="white"); clock.pack(pady=(0, 6))
+        status = tk.Label(root, text="waiting for video from " + host, font=("Menlo", 16), fg="#333", bg="white")
+        status.pack(pady=(0, 24))
+        root.protocol("WM_DELETE_WINDOW", finish)
+        root.attributes("-topmost", True); root.lift()
+        try:
+            root.focus_force()
+        except tk.TclError:
+            pass
+        t0 = time.time()
+        state = {"last": 0}
+
+        def tick():
+            if done["v"]:
+                root.quit(); return
+            t = now_ms()
+            g = qr_gray(mk(f"{PREFIX}{int(t)}"), px)
+            img.configure(data=b"P5 %d %d 255\n" % (g.shape[1], g.shape[0]) + g.tobytes(), format="ppm")
+            clock.configure(text=clock_text(t))
+            el = time.time() - t0
+            if int(el) > state["last"]:
+                state["last"] = int(el)
+                print(running_line(rx, t0), flush=True)
+                c = rx.counted()
+                status.configure(text=(f"median {np.median([s[3] for s in c]):.0f} ms over {len(c)} frames" if c else
+                                       ("video in, aim the camera at this QR" if rx.frames else
+                                        "waiting for video from " + host)))
+            if rx.first_frame_ms is None and el > 25:
+                print(f"no video from {host} after 25 s: check the Pi's ~/rpicam-vid.log and that UDP {port} "
+                      f"reaches {mac} (MWireless client isolation can block Pi-to-Mac on campus; use the tailnet name)")
+                root.quit(); return
+            if rx.first_frame_ms is not None and now_ms() - rx.first_frame_ms > (args.seconds + WARMUP_S) * 1000:
+                root.quit(); return
+            root.after(max(1, int(1000 / FPS - (now_ms() - t))), tick)
+        root.after(10, tick)
+        root.mainloop()
+        try:
+            root.destroy()
+        except Exception:
+            pass
+    finally:
+        stop_remote(host)
+        rx.close()
+        try:
+            subprocess.run(["scp", "-q", "-o", "ConnectTimeout=8", f"{PI_USER}@{host}:~/rpicam-vid.log",
+                            os.path.join(outdir, "logs", f"rpicam-vid-{stamp}.log")], capture_output=True, timeout=20)
+        except Exception:
+            pass
+    st = stats(rx.counted())
+    settings = [f"froggy-cam-latency {datetime.datetime.now():%Y-%m-%d %H:%M:%S}, host {host}, Mac {mac}",
+                f"Pi: {' | '.join(info)}",
+                f"stream: rpicam-vid {ENC} -o udp://{mac}:{port}",
+                f"decode: {rx.desc}",
+                f"QR: {name}, version {QR_VERSION}, {px} px/module ({side} px), redrawn at {FPS} Hz"]
+    lines = result_lines(rx, st)
+    csv, summ = write_results(outdir, rx, settings, lines, stamp)
+    notes = os.path.join(outdir, "NOTES.md")
+    if not os.path.exists(notes):
+        with open(notes, "w") as f:
+            f.write(f"# Froggy camera latency test, {host}\n\nDate: {date}\n"
+                    "People: Sawyer Smith, ROB 450 Team 03 (Froggy Turntable)\n\n"
+                    "## Latency method\n"
+                    "Automatic, made by `froggy-cam-latency`. The Mac shows a QR code that encodes its own clock in ms, "
+                    "redrawn at 30 Hz, next to a readable clock. The Pi camera films it and streams H.264 over UDP with "
+                    "the froggy-cam-live settings. The Mac decodes each frame, reads the QR with OpenCV, and takes "
+                    "latency = Mac time when the decoded frame is in hand - time in the QR. Both times come from the "
+                    "Mac clock. It counts the QR window display, camera exposure, Pi encode, Wi-Fi, receive and decode. "
+                    "It leaves out a viewer's own draw (about one display refresh) and the QR detect time. The 30 Hz "
+                    "redraw adds 0 to 33 ms (17 ms on average). The first second of each run is startup and is not "
+                    "counted. With --decoder ffmpeg the ffmpeg CLI path adds about two frames (70 ms), as ffplay does.\n\n"
+                    "## Runs\n")
+    with open(notes, "a") as f:
+        f.write(f"\n### Run {stamp[:2]}:{stamp[2:4]}:{stamp[4:]}\n")
+        for l in settings + lines:
+            f.write(f"- {l}\n")
+        f.write(f"- files: {os.path.basename(csv)}, {os.path.basename(summ)}, logs/rx-{stamp}.log, "
+                f"logs/rpicam-vid-{stamp}.log\n")
+    print("\n".join(settings[2:4] + lines))
+    print(f"results: {outdir}")
+    return 0 if st else 1
+
+def main():
+    doc = __doc__.split("\n\n")
+    ap = argparse.ArgumentParser(prog="froggy-cam-latency", description=doc[0],
+                                 formatter_class=argparse.RawDescriptionHelpFormatter, epilog="\n\n".join(doc[1:]))
+    ap.add_argument("--host", help="Pi host (default FROGGY_PI, ~/.config/froggy/pi-host, froggy-pi.local)")
+    ap.add_argument("--seconds", type=float, default=None, help="measuring time after the first frame (20 live, 8 self-test)")
+    ap.add_argument("--port", type=int, default=8888, help="UDP port on this Mac (default 8888)")
+    ap.add_argument("--decoder", choices=("lavc", "ffmpeg"), default="lavc", help="lavc (default) or the ffmpeg CLI")
+    ap.add_argument("--out", help="results folder (default ROB450/Frog/testing/<date>-<host>-latency)")
+    ap.add_argument("--self-test", action="store_true", help="synthetic stream with a known delay, no Pi, no window")
+    ap.add_argument("--delay-ms", type=float, default=120.0, help="self-test injected delay (default 120)")
+    ap.add_argument("--stop", action="store_true", help="kill the Pi's rpicam-vid (and a froggy-cam-live ffplay)")
+    args = ap.parse_args()
+    if args.stop:
+        stop_remote(pi_host(args)); print("stopped"); return 0
+    if args.seconds is None:
+        args.seconds = 8.0 if args.self_test else 20.0
+    return self_test(args) if args.self_test else live(args)
+
+if __name__ == "__main__":
+    sys.exit(main())

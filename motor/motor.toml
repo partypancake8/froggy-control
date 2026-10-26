@@ -1,0 +1,16 @@
+# Froggy motor settings. Anything here overrides CONFIG at the top of froggy_motor.py.
+# deploy.sh copies this file to the Pi with the code.
+
+motor = "17HS08-1004"        # or "17HS19-2004": also set SW1..SW3 on the DM320T (WIRING.md)
+microstep = 16               # must match SW4 OFF, SW5 OFF, SW6 ON
+max_rpm = 600
+max_accel_rpm_per_s = 200    # about 0.08 Nm on the 0.0038 kg m^2 rotor: inside the 17HS08 torque
+emergency_decel_s = 0.5      # fine for the bare motor; use 2.0 (400 rpm) or 3.0 (600 rpm) with the drum on
+dir_cw_level = 0             # flip to 1 if "cw" turns the drum the wrong way
+
+[pins]                       # BCM numbers, as wired 2026-10-21 (two 2N7000s, see WIRING.md)
+pul = 18                     # physical pin 12; must be a hardware PWM pin (12, 13, 18 or 19)
+dir = 27                     # physical pin 13
+ena = "none"                 # not wired: driver always enabled. NPN variant: ena = 24
+estop = 25                   # physical pin 22, NC contact to GND pin 20
+index = 17                   # physical pin 11 (free since PUL moved to pin 12)
