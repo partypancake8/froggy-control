@@ -1,0 +1,6 @@
+#!/bin/bash
+# froggy-cad CLI shim: runs froggy_cad.cli from the repo root inside the uv venv.
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT" || exit 1
+PY="${FROGGY_PYTHON:-$ROOT/.venv/bin/python}"
+exec "$PY" -m froggy_cad.cli "$@"

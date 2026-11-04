@@ -1,0 +1,16 @@
+{
+  "name": "RAF M0669-5-AL round spacer",
+  "url": "https://www.mwcomponents.com/shop/m0669-5-al",
+  "file": "product.html",
+  "price_usd": null,
+  "mass_g": 3.05,
+  "datasheet": {
+    "od_mm": 10,
+    "id_mm": 5.3,
+    "length_mm": 20
+  },
+  "note": "Geometry reconstructed from fetched manufacturer product dimensions; price pending.",
+  "author": "manufacturer drawing / vendor STEP; Codex assembly placement",
+  "licence": "vendor CAD reference",
+  "fetched": "2026-10-26T16:11:45.485364+00:00"
+}

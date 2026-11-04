@@ -1,0 +1,13 @@
+{
+  "name": "goBILDA 2106-4008-0720 REX shaft 8 x 72 mm",
+  "url": "https://www.gobilda.com/8mm-rex-shaft-with-e-clip-stainless-steel-72mm-length/",
+  "file": "2106-4008-0720.step",
+  "step_url": "https://www.gobilda.com/content/step_files/2106-4008-0720.zip",
+  "mass_g": 22.0,
+  "mass_note": "22 g per current vendor product page",
+  "price_usd": 4.89,
+  "note": "E-clip omitted; end M4 bolts provide backup retention. Nominal 8 mm REX section is modeled at original vendor dimensions.",
+  "author": "manufacturer drawing / vendor STEP; Codex assembly placement",
+  "licence": "vendor CAD reference",
+  "fetched": "2026-10-26T16:11:45.485364+00:00"
+}

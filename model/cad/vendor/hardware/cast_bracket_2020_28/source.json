@@ -1,0 +1,13 @@
+{
+ "name": "2020 die-cast 90 deg corner bracket 28 x 28 x 20, 2 x M5 slots (same part as the frame corners)",
+ "url": "https://core-electronics.com.au/catalog/product/view/sku/CE10173",
+ "drawing_url": "https://www.makerstore.com.au/?p=128197",
+ "file": "assemblies/froggy_v8.py:_bracket_solid",
+ "author": "Core Electronics CE10173 (price); Makerstore listing (28 x 28 x 20 size)",
+ "licence": "modelled from the listing dimensions",
+ "price_usd": 2.0,
+ "price_note": "AUD 3.00 ex GST at Core Electronics, about USD 2.00",
+ "mass_g": 12.0,
+ "datasheet": {"leg": 28.0, "width": 20.0, "thickness": 4.0, "hole": 5.5, "hole_from_corner": 16.0},
+ "fetched": "2026-10-11"
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Olimex GT2-5T20-6MM motor pulley",
+  "url": "https://www.olimex.com/Products/Robot-CNC-Parts/GT2/GT2-5T20-6MM/",
+  "file": "product.html",
+  "price_usd": 2.0,
+  "price_note": "USD budgeting allowance only; listing is EUR 0.80",
+  "mass_g": 6,
+  "mass_note": "assumed from comparable 16 x 16 pulley",
+  "author": "Olimex specification; Codex B-rep reconstruction",
+  "licence": "vendor product reference",
+  "datasheet": {
+    "bore_mm": 5,
+    "teeth": 20,
+    "pitch_mm": 2,
+    "belt_width_mm": 6,
+    "length_mm": 16,
+    "flange_od_mm": 16
+  },
+  "assumptions": [
+    "7 mm hub, 0.5 mm flanges, 8 mm tooth band, hub OD 12 mm and M3 x 3 grub screws need measurement against supplied part",
+    "20T tooth outline derived from same-pitch goBILDA STEP; not a manufacturing profile for Olimex",
+    "5.02 mm model bore clearance; actual nominal bore 5 mm",
+    "Round bore seats directly on motor D shaft; one grub tip against existing flat, no D-bore claim"
+  ],
+  "fetched": "2026-10-26T14:32:00.372447+00:00"
+}

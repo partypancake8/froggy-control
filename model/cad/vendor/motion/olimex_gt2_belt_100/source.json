@@ -1,0 +1,22 @@
+{
+  "name": "Olimex GT2-BELT100-6MM closed-loop belt",
+  "url": "https://www.olimex.com/Products/Robot-CNC-Parts/GT2/GT2-BELT100-6MM/",
+  "file": "product.html",
+  "price_usd": 2.0,
+  "price_note": "USD budgeting allowance only; listing is EUR 0.75",
+  "mass_g": 1.0,
+  "mass_note": "estimated",
+  "author": "Olimex specification; Codex routed B-rep",
+  "licence": "vendor product reference",
+  "datasheet": {
+    "pitch_mm": 2,
+    "pitch_length_mm": 100,
+    "width_mm": 6,
+    "teeth": 50
+  },
+  "assumptions": [
+    "Belt backing/thickness and straight tooth fillets are visualization geometry; wrapped teeth follow vendor pulley grooves",
+    "No working tension rating published on the listing; operating torque and pretension require qualification"
+  ],
+  "fetched": "2026-10-26T14:32:00.732737+00:00"
+}

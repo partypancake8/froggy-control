@@ -1,0 +1,24 @@
+{
+ "name": "TRU Components LAS4GQH-11 12 mm latching pushbutton, 1NO1NC, no LED (Conrad 1661896)",
+ "url": "https://asset.conrad.com/media10/add/160267/c1/-/gl/001661888DS00/tehnicni-podatki-1661888-tru-components-las4gqh-11ew12vs-pritisno-stikalo-1-kos.pdf",
+ "drawing_url": "https://asset.conrad.com/media10/add/160267/c1/-/gl/001661888DS00/tehnicni-podatki-1661888-tru-components-las4gqh-11ew12vs-pritisno-stikalo-1-kos.pdf",
+ "file": "LAS4GQH-11-datasheet.pdf",
+ "author": "TRU Components / Conrad (data-sheet drawing)",
+ "licence": "modelled from vendor drawing",
+ "price_usd": 6.0,
+ "price_note": "assumed",
+ "mass_g": 12.0,
+ "datasheet": {
+  "mounting_d": 12,
+  "thread": "M12 x 1",
+  "head": "14 x 3.2",
+  "button_d": 7.4,
+  "body_behind_head": 36.35,
+  "panel_max": 10,
+  "nut_across_corners": 16.2,
+  "nut_thickness_assumed": 2.0,
+  "rating": "48 V 2 A"
+ },
+ "fetched": "2026-10-11",
+ "note": "Conrad item 1661896 (latching, no LED) from the data-sheet table"
+}

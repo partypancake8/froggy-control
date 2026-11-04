@@ -1,0 +1,25 @@
+{
+ "name": "BACO LBX10510 22 mm one-hole control station, emergency stop: 40 mm red mushroom head, push-turn to reset, maintained, 1 NC",
+ "url": "https://nemasupply.com/products/22-mm-control-stations-non-illuminated-push-turn-40mm-mushroom-head-emegency-stop-e-stop",
+ "drawing_url": "https://bacocontrols.com/wp-content/uploads/Baco-Controls-22mm-Quick-Reference-Guide.pdf",
+ "file": "lbx10510.stp",
+ "model_source": "BACO products site CAD download (TraceParts, STEP AP214, CATIA V5 export 2009-04-28), fetched 2026-10-12",
+ "model_note": "26 solids: base, cover, 4 cover screws + 4 nuts, bezel, operator body, 40 mm head, contact block, terminals; lbx10510.txt is the TraceParts attribute sheet. Bounding box 74.0 x 73.75 x 74.0. The operator axis sits 5 mm off the box centre (as modelled by BACO). Froggy v9 (2026-10-12, S2.10 option A) uses the complete station, all 26 solids, recessed through a 76 x 76 front panel opening with the yellow cover face 5 mm proud, turned 90 deg so the knockouts face +-X, on the printed fp9_estop_cradle (ICD S2.10).",
+ "author": "BACO Controls, Inc. (manufacturer model via TraceParts; Nema Supply listing, SKU LBX10510)",
+ "licence": "manufacturer CAD download for design use (TraceParts terms)",
+ "price_usd": 66.99,
+ "price_note": "Nema Supply regular price, fetched 2026-10-12; the lab already has one",
+ "mass_g": 160,
+ "mass_note": "assumed",
+ "datasheet": {
+  "enclosure": "LBX single position base 74 x 74, 47.9 deep box, head 25.7 proud (BACO LBX0100 drawing, catalog p. 100)",
+  "mushroom_d": 40,
+  "operator": "22 mm, push-turn to reset, maintained",
+  "contacts": "1 NC",
+  "mounting_holes": "2 through slots 4.56 wide x 3 long in the base back, diagonal, 42.5 (X) x 59.5 (Z) apart, read off the STEP base solid: viewed from the front, top-left at (-20.5, +29.0) slot vertical, bottom-right at (+22.0, -30.5) slot horizontal, relative to the box centre; matches the LBX0100 drawing (16.5 from the left edge, 8 from the top). The other diagonal has two closed knockout bosses, not holes",
+  "cable_entry": "M16/20 knockouts in the top and bottom walls; no hole in the back",
+  "ingress": "IP69K per the Nema Supply listing title (BACO LBX listings elsewhere say IP66)"
+ },
+ "fetched": "2026-10-12",
+ "enclosure_used": true
+}

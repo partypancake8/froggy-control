@@ -1,0 +1,2 @@
+# froggy_cad/outcache.py writes its build cache next to model/cad
+froggy-cad-cache/

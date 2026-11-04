@@ -1,0 +1,15 @@
+{
+ "name": "Joy-it SEN-KY003HMS KY-003 hall effect magnet sensor module (A3144 digital hall switch, 3 pin)",
+ "url": "https://joy-it.net/en/products/SEN-KY003HMS",
+ "datasheet": "https://joy-it.net/files/files/Produkte/SEN-KY003HMS/SEN-KY003HMS_Datasheet_2023-08-25.pdf",
+ "alt_url": "https://www.phippselectronics.com/product/magnetic-hall-effect-sensor-module-ky-003",
+ "author": "catalogue (modelled in assemblies/froggy_v9.py:_hall_board from the listing dimensions)",
+ "licence": "modelled from listing dimensions",
+ "file": "assemblies/froggy_v9.py:_hall_board",
+ "price_usd": 3.5,
+ "price_note": "not on the Joy-it page; typical KY-003 street price, assumed",
+ "dims_mm": {"overall": [15.0, 29.0, 7.0], "board": [15.0, 18.5, 1.6], "sensor": "A3144 TO-92S 4.1 x 3.0 x 1.52",
+             "hole_d": 3.2, "source": "Joy-it: 15 x 29 x 7 (with header); Phipps: board 18.5 x 15; hole position and the bent-lead sensor pose assumed; header not fitted, wires soldered to the pads"},
+ "electrical": {"supply": "4.5 to 24 V", "output": "active low when a south pole is present (A3144 unipolar)"},
+ "fetched": "2026-10-12"
+}

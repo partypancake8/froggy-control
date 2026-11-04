@@ -1,0 +1,5 @@
+#!/bin/bash
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT" || exit 1
+PY="${FROGGY_PYTHON:-$ROOT/.venv/bin/python}"
+exec "$PY" -m froggy_cad.live "$@"

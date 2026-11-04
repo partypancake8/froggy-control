@@ -1,0 +1,30 @@
+{
+  "name": "Creality Ender-3 standard POM V wheel and 625 bearings",
+  "url": "https://github.com/Creality3DPrinting/Ender-3",
+  "revision": "88c7758cea9d0d00a54fdb238bedb3b33425f409",
+  "file": "Rollers.step",
+  "author": "Creality3DPrinting, official Ender-3 mechanical source",
+  "licence": "GPL-3.0; see LICENSE",
+  "fetched": "2026-10-26",
+  "note": "Exact official STEP geometry; placement and internal stack checked separately. Purchase an assembled wheel matching these dimensions.",
+  "source_url": "https://github.com/Creality3DPrinting/Ender-3",
+  "purchase_url": "https://mvip.creality.com/en/goods/goodsDetail/840",
+  "part_number": "4001070002",
+  "mass_g": 13,
+  "price_usd": 1.39,
+  "dimensions_mm": {
+    "wheel_OD": 24.1,
+    "plastic_width": 10.2,
+    "flat_tread_width": 6.1,
+    "kit_width": 11,
+    "bore": 5,
+    "internal_shim": 1
+  },
+  "sha256": {
+    "625pillow.step": "ab8ef5af0a2c00746a363435fa07bb30672de7f3140b5d706f4747545738aaca",
+    "M5 washer1.step": "710d5190cb44e68bfeed65b607871f830411a17c323c813ccc4aff5d466e8cd9",
+    "Spacers for rollers.step": "ab856117ed8e3919e592e1be8b3413b1872eebacb590cd5d2d4c7067f6da274d",
+    "Rollers.step": "c206f325637371a2f7f8af2b9472e2048f31d36d99cf3c6cd50bdfa161ed7f96",
+    "M5 washer.step": "0edb44b8ac6835dff621296bc0cdaaaa9115f45a49a4c610850cf49d650f7d58"
+  }
+}

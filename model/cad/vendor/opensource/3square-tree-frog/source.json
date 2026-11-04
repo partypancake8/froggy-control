@@ -1,0 +1,30 @@
+{
+ "name": "Red Eyed Tree Frog (Agalychnis callidryas)",
+ "url": "https://www.printables.com/model/1484159-red-eyed-tree-frog-agalychnis-callidryas",
+ "download_url": "https://files.printables.com/media/prints/7531ef12-47dd-4a72-bad9-588e63f5d744/stls/11183016_3eb6ea2e-32e8-4d22-9a36-90d5d5b2cc7d_4694cbb9-bd37-42ec-a31d-6015fa792ec6/agalychnis-callidryas-looking.stl",
+ "author": "3square",
+ "licence": "CC BY-SA",
+ "licence_full": "Creative Commons - Attribution - Share Alike",
+ "price_usd": 0,
+ "file": "agalychnis-eyeless-decimated-2k.stl",
+ "fetched": "2026-10-06",
+ "note": "Native units appear arbitrary (extents ~2.5x3.5x1.1); body head-to-vent about 2.3 units, so scale about 19.5 for a 45 mm body. Sitting/crouched pose with eyes; sibling files eyes.stl and eyeless-looking.stl also exist on the page.",
+ "original_file": "Agalychnis-callidryas-looking.stl",
+ "decimated": "trimesh quadric decimation per body (body 1800 + eyes 2 x 100 = 2000 faces), scaled x 19.5 to mm",
+ "files_v7": [
+  "agalychnis-eyeless-decimated-2k.stl",
+  "agalychnis-eyes-decimated-300.stl"
+ ],
+ "original_files": [
+  "Agalychnis-callidryas-looking.stl",
+  "Agalychnis-callidryas-eyeless-looking.stl",
+  "Agalychnis-callidryas-eyes.stl"
+ ],
+ "all_downloads": [
+  "https://files.printables.com/media/prints/7531ef12-47dd-4a72-bad9-588e63f5d744/stls/11183016_3eb6ea2e-32e8-4d22-9a36-90d5d5b2cc7d_4694cbb9-bd37-42ec-a31d-6015fa792ec6/agalychnis-callidryas-looking.stl",
+  "https://files.printables.com/media/prints/0ccc45ea-91d1-477f-aa69-c761297a9f3e/stls/11183014_847d6075-ff2b-4f9f-9d86-2f1c010ddb9c_33dfe122-91eb-434c-baa0-a86444f0d386/agalychnis-callidryas-eyes.stl",
+  "https://files.printables.com/media/prints/3d1527c1-6f15-43ef-95db-7f0c25f7614d/stls/11183015_d4691ae8-6ace-49d1-8cb0-d6512fb8ef1c_47ab574c-c855-4888-8777-2e600e33ab64/agalychnis-callidryas-eyeless-looking.stl"
+ ],
+ "decimated_v7": "eyeless body quadric-decimated to 2000 faces; eyes: Agalychnis-callidryas-eyes.stl (2 x 2194 faces) is the same eye mesh in another frame, so the identical eye bodies of looking.stl (same frame as the eyeless body) were used, decimated to 300 faces; both scaled x 19.5 to mm",
+ "fetched_v7": "2026-10-06 via Printables GraphQL getDownloadLink"
+}

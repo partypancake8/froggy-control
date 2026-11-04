@@ -1,0 +1,14 @@
+{
+ "name": "USB C Small Round Panel Mount Extension Cable (Adafruit 6069)",
+ "url": "https://www.adafruit.com/product/6069",
+ "datasheet": "https://www.adafruit.com/product/6069 (Technical Details: dimension diagram PDF/JPG)",
+ "author": "catalogue (envelope modelled in assemblies/froggy_v8.py:_charge_port)",
+ "licence": "modelled from published dimensions",
+ "file": "assemblies/froggy_v8.py:_charge_port",
+ "price_usd": 4.5,
+ "published": {"panel_hole_mm": "12 to 18", "panel_thickness_mm": "up to 13", "nut": "plastic, removable"},
+ "modelled": {"flange_d": 19.0, "flange_t": 2.5, "threaded_body_d": 12.0, "nut_d": 14.0, "nut_t": 4.0, "cable_boot_d": 7.0,
+              "panel_hole_d": 12.4,
+              "note": "flange, body and nut sizes chosen to fit the published 12 to 18 mm hole range; the dimension diagram was not read (fetch blocked), so these are an envelope, not measured"},
+ "fetched": "2026-10-11"
+}

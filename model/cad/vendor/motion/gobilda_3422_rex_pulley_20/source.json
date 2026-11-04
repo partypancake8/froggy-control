@@ -1,0 +1,20 @@
+{
+  "name": "goBILDA 3422-4008-0020 20T GT2 REX pulley",
+  "url": "https://www.gobilda.com/2mm-pitch-gt2-pinion-timing-pulley-8mm-rex-bore-20-tooth/",
+  "file": "3422-4008-0020 assembly.STEP",
+  "price_usd": 7.99,
+  "mass_g": 10,
+  "author": "goBILDA",
+  "licence": "vendor CAD download",
+  "drawing_url": "https://www.gobilda.com/content/spec_sheets/3422-4008-0020_spec-sheet.pdf",
+  "datasheet": {
+    "bore": "8 mm REX, 7 mm across flats",
+    "teeth": 20,
+    "pitch_mm": 2,
+    "belt_width_mm": 6,
+    "length_mm": 18,
+    "flange_od_mm": 15
+  },
+  "note": "Vendor STEP includes toothed core, steel hub, flange, and two set screws; placed hub up.",
+  "fetched": "2026-10-26T14:32:00.371876+00:00"
+}

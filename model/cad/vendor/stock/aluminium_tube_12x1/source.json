@@ -1,0 +1,14 @@
+{
+ "name": "6061-T6 aluminium round tube, 12 mm OD x 1 mm wall, cut to length (I030 cage: 4 posts x 260 + 4 top rails x 178.6)",
+ "url": null,
+ "drawing_url": null,
+ "file": "lib/hardware.py:ring (called by assemblies/froggy_v9.py:_cage)",
+ "author": "stock material (no supplier chosen yet)",
+ "licence": "plain stock tube, modelled as its nominal section",
+ "price_usd": 6.0,
+ "price_note": "assumed: about USD 6 per 1 m length; two lengths cover 4 x 260 + 4 x 178.6 = 1754 mm plus saw kerf; supplier to be chosen (any 12 x 1 6061 tube)",
+ "mass_g": 24.3,
+ "mass_note": "post: 34.6 mm2 section x 260 x 2.70 g/cm3 = 24.3 g; top rail 178.6 long 16.7 g",
+ "datasheet": {"od_mm": 12.0, "wall_mm": 1.0, "alloy": "6061-T6"},
+ "fetched": null
+}

@@ -1,0 +1,18 @@
+{
+ "name": "M5 x 10 mm OD x 140 mm aluminium round female-female threaded standoff (spacer)",
+ "url": "https://www.ebay.de/itm/305764997563",
+ "variant": "M5*140mm - D10",
+ "alt_url": "https://www.ebay.de/itm/376414335077",
+ "vendor": "eBay seller listing 'M5 aluminium round threaded sleeve standoff' (same listing as the old 8 x 100 post)",
+ "author": "catalogue (modelled in assemblies/froggy_v9.py:_drum_post from the listing dimensions; the vendor gives no STEP, so the part is a built cylinder)",
+ "licence": "modelled from listing dimensions",
+ "file": "assemblies/froggy_v9.py:_drum_post",
+ "price_usd": 4.0,
+ "price_note": "not read (eBay refused every fetch, HTTP 403); assumed from the 8 x 100 (about 3 USD) plus length",
+ "dims_mm": {"od": 10.0, "length": 140.0, "thread": "M5 x 0.8 female both ends", "thread_depth_each_end": 12.0,
+             "source": "web search listing text for 305764997563: 8 mm OD lengths 10 to 150 without 140, 140 offered as 'M5*140mm - D10'; thread depth assumed 12 (long sizes are threaded from each end)"},
+ "why_10_od": "no 8 OD x 140 listing was found (Lyntron 8 OD stops at 32, RJX Hobby 8 OD lists 120 and 150, eBay 8 OD lists up to 150 without 140); the brief forbids stacking, and Sawyer asked for a 140 tube, so the listed 10 OD x 140 is used. At r 66 the 10 OD body spans r 61..71, 2 clear of the tube bore r 73.",
+ "material": "aluminium (alloy not stated on the listing)",
+ "why_140": "a stock length: the tube foot stands on ring B (Z 54.175) and the post runs ring B top to the top disc underside, 140 = TUBE_H (I017)",
+ "fetched": "2026-10-13"
+}

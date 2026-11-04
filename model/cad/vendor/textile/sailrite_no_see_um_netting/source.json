@@ -1,0 +1,18 @@
+{
+ "name": "Sailrite No-See-Um mosquito netting, black, 60 in wide, 100 % nylon, 0.81 oz/sq yd (SKU 106531)",
+ "url": "https://sailrite.com/No-See-Um-Mosquito-Netting-Black",
+ "drawing_url": null,
+ "file": "parts/fp9_cage.py:mesh_outline (assemblies/froggy_v9.py s_cage_mesh_*)",
+ "author": "Sailrite (product page)",
+ "licence": "modelled as 0.3 sheets on the panel inner faces (real fabric about 0.3)",
+ "price_usd": 4.95,
+ "price_note": "per yard; one yard (60 in wide) covers the five I030 panels (4 x 0.060 m2 + 0.042 m2 plus spline margins)",
+ "mass_g": 7.8,
+ "datasheet": {
+  "width_in": 60,
+  "material": "nylon",
+  "weight_oz_per_sq_yd": 0.81
+ },
+ "fetched": "2026-10-11",
+ "mass_note": "0.81 oz/sq yd = 27.5 g/m2 x 0.283 m2 of panel netting (lib/mass.py KNOWN_MASS_G)"
+}

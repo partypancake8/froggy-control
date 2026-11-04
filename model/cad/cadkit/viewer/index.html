@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>CAD Viewer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="style.css">
+<script>
+// errors go to the server (POST /log) so a headless check sees them; installed before the module loads
+(function(){
+  function send(level,msg){try{fetch('/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level:level,msg:String(msg).slice(0,2000)})});}catch(e){}}
+  window.__log=send;
+  window.addEventListener('error',function(e){send('error',(e.message||'error')+' at '+(e.filename||'')+':'+(e.lineno||''));});
+  window.addEventListener('unhandledrejection',function(e){send('error','unhandled rejection: '+(e.reason&&(e.reason.stack||e.reason.message)||e.reason));});
+  var ce=console.error,cw=console.warn;
+  console.error=function(){send('error',Array.prototype.join.call(arguments,' '));ce.apply(console,arguments);};
+  console.warn=function(){send('warn',Array.prototype.join.call(arguments,' '));cw.apply(console,arguments);};
+})();
+</script>
+</head><body>
+<header id="top">
+  <span id="title">CAD viewer</span>
+  <span id="status">loading...</span>
+  <span id="views"></span>
+  <button id="proj" title="Orthographic matches the review packet PNGs">Ortho</button>
+  <button id="fit" title="Fit everything visible">Fit</button>
+  <button id="grid" aria-pressed="false" title="Show ground grid">Grid</button>
+  <span class="sep"></span>
+  <button id="undo" disabled title="Undo (Cmd/Ctrl+Z)">Undo</button>
+  <button id="redo" disabled title="Redo (Shift+Cmd/Ctrl+Z or Ctrl+Y)">Redo</button>
+</header>
+<aside id="side">
+  <div class="row"><button id="showall">Show all</button><button id="hidefast">Hide fasteners</button><button id="collapse">Collapse</button></div>
+  <div id="tree"></div>
+  <section class="ctl" id="maskbox" hidden>
+    <div class="h">Move <span id="mname"></span> <span id="mcount"></span></div>
+    <div class="row2"><button id="mT" class="on" title="W">Move</button><button id="mR" title="E">Rotate</button><button id="mS" title="R">Scale</button><button id="mSp" title="X: world or local axes">world</button><label title="scale all axes together"><input type="checkbox" id="lock" checked> uniform</label></div>
+    <div class="xyz"><span class="lab">pos mm</span><input type="number" step="1" id="px"><input type="number" step="1" id="py"><input type="number" step="1" id="pz"></div>
+    <div class="xyz"><span class="lab">rot deg</span><input type="number" step="1" id="rx"><input type="number" step="1" id="ry"><input type="number" step="1" id="rz"></div>
+    <div class="xyz"><span class="lab">scale</span><input type="number" step="0.01" id="sx"><input type="number" step="0.01" id="sy"><input type="number" step="0.01" id="sz"></div>
+    <div class="slider"><span class="lab">opacity</span><input type="range" id="op" min="0" max="1" step="0.01" value="1"><span class="val" id="opv"></span></div>
+    <div class="row2"><button id="reset" title="back to the pose it loaded with">Reset</button><button id="resume" disabled>Resume saved</button><button id="save">Save pose</button><span id="posestat"></span></div>
+    <div class="mono" id="delta"></div>
+    <div class="mono" id="saved"></div>
+    <div class="keys">W move, E rotate, R scale, X axes, Shift snaps. Arrows 1 mm, PgUp/PgDn Z, [ ] pitch. Autosaves 0.5 s after each change.</div>
+  </section>
+  <section class="ctl">
+    <div class="h">Section</div>
+    <div class="slider"><label><input type="checkbox" id="clipZon"> Z</label><input type="range" id="clipZ" step="1"><span class="val" id="clipZv"></span><label title="keep the other side"><input type="checkbox" id="clipZflip"> flip</label></div>
+    <div class="slider"><label><input type="checkbox" id="clipXon"> X</label><input type="range" id="clipX" step="1"><span class="val" id="clipXv"></span><label title="keep the other side"><input type="checkbox" id="clipXflip"> flip</label></div>
+    <div class="h">Explode</div>
+    <div class="slider"><span class="lab">0 to 1</span><input type="range" id="explode" min="0" max="1" step="0.01" value="0"><span class="val" id="explodev">0.00</span></div>
+  </section>
+</aside>
+<main id="view"><canvas id="c"></canvas><div id="camnote" hidden><span id="camnote-t"></span></div><div id="tip"></div><div id="triad-label">X red, Y green, Z blue</div></main>
+<footer id="bottom"><span id="selname">Click a part to select it. Double-click to focus. Esc clears. Cmd/Ctrl+Z undoes.</span><span id="selpath"></span></footer>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module" src="view.js"></script>
+</body></html>

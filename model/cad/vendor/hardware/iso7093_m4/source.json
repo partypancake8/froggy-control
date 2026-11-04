@@ -1,0 +1,16 @@
+{
+  "name": "M4 ISO 7093 large washer 4.3 x 12 x 1",
+  "url": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_9021_spec.pdf",
+  "file": "drawing.pdf",
+  "price_usd": null,
+  "mass_g": 0.774,
+  "datasheet": {
+    "id_mm": 4.3,
+    "od_mm": 12,
+    "thickness_mm": 1
+  },
+  "note": "Catalogue standard dimensional model; supplier selection and price pending.",
+  "author": "manufacturer drawing / vendor STEP; Codex assembly placement",
+  "licence": "vendor CAD reference",
+  "fetched": "2026-10-26T16:11:45.485364+00:00"
+}

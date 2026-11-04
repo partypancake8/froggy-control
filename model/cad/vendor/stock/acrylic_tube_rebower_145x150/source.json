@@ -1,0 +1,17 @@
+{
+ "name": "Rebower clear cast acrylic round tube, 145 mm ID x 150 mm OD x 14 in (355.6 mm) long, 2.5 mm wall",
+ "url": null,
+ "url_note": "Amazon listing (Rebower), ordered by Sawyer 2026-10-28; the listing URL was not recorded in the brief",
+ "vendor": "Rebower (Amazon)",
+ "author": "stock material (modelled in parts/s_drum_tube.py as a plain tube from the listing dimensions; no STEP)",
+ "licence": "plain stock tube, modelled as its nominal section",
+ "file": "parts/s_drum_tube.py",
+ "price_usd": null,
+ "price_note": "not read; ordered under the USD 100 cap (Sawyer: 'we cannot spend anywhere close to $100 on tube')",
+ "dims_mm": {"od": 150.0, "id": 145.0, "wall": 2.5, "length": 355.6,
+             "od_tolerance": "unknown (assumed): measure the OD on arrival, then print both tube seats at measured OD + 0.6 (0.3 radial)"},
+ "cut": "140 square (TUBE_H); one 355.6 tube gives 2 drums (1 + 1 spare)",
+ "replaces": "Plastic-Craft 6 in OD x 5.75 in ID (152.4 x 3.2), unavailable 2026-10-28 (I036)",
+ "material": "cast acrylic, clear (listing)",
+ "fetched": null
+}

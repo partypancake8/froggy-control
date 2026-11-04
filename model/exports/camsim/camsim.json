@@ -1,0 +1,1413 @@
+{
+ "assembly": "froggy_v12_5",
+ "camera": {
+  "model": "Arducam UC-261 (OV5647 + LS-40180 fisheye, B0055 class)",
+  "sensor": "OmniVision OV5647, 1/4 in, 2592 x 1944, 1.4 um pixels (3.63 x 2.72 mm active)",
+  "resolution_px": [
+   2592,
+   1944
+  ],
+  "fov_diag_deg": 206.0,
+  "fov_h_deg": 194.0,
+  "fov_v_deg": 145.5,
+  "fov_circle_deg": 206.0,
+  "fov_note": "Arducam publishes only the horizontal FOV for the 1/4 in OV5647 board (194 deg). V is derived for an equidistant fisheye on the 4:3 sensor: 194 x 3/4 = 145.5 deg (EFL check: 2.72 mm / 1.05 mm = 148 deg). The sensor diagonal would map to 194 x 5/4 = 242.5 deg, but the LS-40180 image circle stops at 206 deg (Arducam's own D figure for this lens), so the corners beyond the 206 deg circle are dark; fov_diag_deg is that 206 deg circle. Measured on Sawyer's 2026-10-07 still at 1296 x 972: corner fall-off at radius 690 to 720 px, f = 648 px / 97 deg = 383 px/rad, so the circle is about 207 to 215 deg, consistent with 206.",
+  "projection": "equidistant fisheye (r = f * theta)",
+  "source_url": "https://www.arducam.com/blog/product/arducam-raspberry-pi-camera-5mp-fisheye-m12-picam-b0055/",
+  "lens_from": "assembly",
+  "lens_xyz_mm": [
+   0.0,
+   0.0,
+   99.0
+  ],
+  "axis_unit": [
+   0.5,
+   -0.0,
+   0.86603
+  ],
+  "tilt_deg": 30.0,
+  "lens_above_disc_mm": 48.0,
+  "board_centre_mm": [
+   -6.4,
+   0.0,
+   87.915
+  ],
+  "board_extent_mm": [
+   1.6,
+   36.0,
+   36.0
+  ],
+  "lens_front_offset_mm": 12.8,
+  "sim_image_px": [
+   800,
+   600
+  ],
+  "f_px_per_rad_sim": 236.271,
+  "f_px_per_rad_sensor": 765.519,
+  "image_orientation": "image width = sensor long axis (from the board), left -X / right +X",
+  "image_up_from": "assembly",
+  "image_up_unit": [
+   0.0,
+   -1.0,
+   -0.0
+  ],
+  "image_right_unit": [
+   0.86603,
+   0.0,
+   -0.5
+  ],
+  "sensor_long_axis_unit": [
+   0.86603,
+   -0.0,
+   -0.5
+  ],
+  "sensor_long_axis_plane": "X-Z",
+  "px_per_mm_note": "px_per_mm at the real 2592 x 1944 sensor, in each frog's contact plane (disc frog: the top disc plane; wall frog: the tube tangent plane), geometric mean of two 1 mm steps; px_area is counted in the simulated image (px_area_sensor scales it)"
+ },
+ "scene": {
+  "parts": [
+   "hw_m3x6_shcs_j_iec_panel_2",
+   "hw_m3x6_shcs_j_iec_panel_1",
+   "hw_hex_nut_m4_j_cl42t_panel_4",
+   "hw_m4x12_button_j_cl42t_panel_4",
+   "hw_hex_nut_m4_j_cl42t_panel_3",
+   "hw_m4x12_button_j_cl42t_panel_3",
+   "hw_hex_nut_m4_j_cl42t_panel_2",
+   "hw_m4x12_button_j_cl42t_panel_2",
+   "hw_hex_nut_m4_j_cl42t_panel_1",
+   "hw_m4x12_button_j_cl42t_panel_1",
+   "hw_insert_m3_j_controller_panel_4",
+   "hw_m3x7_shcs_j_controller_panel_4",
+   "hw_insert_m3_j_controller_panel_3",
+   "hw_m3x7_shcs_j_controller_panel_3",
+   "hw_insert_m3_j_controller_panel_2",
+   "hw_m3x7_shcs_j_controller_panel_2",
+   "hw_insert_m3_j_controller_panel_1",
+   "hw_m3x7_shcs_j_controller_panel_1",
+   "hw_m3x8_shcs_j_psu_panel_4",
+   "hw_m3x8_shcs_j_psu_panel_3",
+   "hw_m3x8_shcs_j_psu_panel_2",
+   "hw_m3x8_shcs_j_psu_panel_1",
+   "hw_insert_m3_j_s2_10_cradle_4",
+   "hw_m3x10_button_j_s2_10_cradle_4",
+   "hw_insert_m3_j_s2_10_cradle_3",
+   "hw_m3x10_button_j_s2_10_cradle_3",
+   "hw_insert_m3_j_s2_10_cradle_2",
+   "hw_m3x10_button_j_s2_10_cradle_2",
+   "hw_insert_m3_j_s2_10_cradle_1",
+   "hw_m3x10_button_j_s2_10_cradle_1",
+   "hw_hex_nut_m4_j_s2_10_estop_2",
+   "hw_m4x12_button_j_s2_10_estop_2",
+   "hw_hex_nut_m4_j_s2_10_estop_1",
+   "hw_m4x12_button_j_s2_10_estop_1",
+   "hw_m4x8_button_j_s1_6_retainer_lower",
+   "hw_m4x8_button_j_s1_6_retainer_upper",
+   "hw_nyloc_m4_j_s1_27_block_3_2",
+   "hw_nyloc_m4_j_s1_27_block_3_1",
+   "hw_nyloc_m4_j_s1_27_block_2_2",
+   "hw_nyloc_m4_j_s1_27_block_2_1",
+   "hw_nyloc_m4_j_s1_27_block_1_2",
+   "hw_nyloc_m4_j_s1_27_block_1_1",
+   "hw_nyloc_m5_j_s1_1_spacer_nxny",
+   "hw_nyloc_m5_j_s1_1_spacer_nxpy",
+   "hw_nyloc_m5_j_s1_1_spacer_pxny",
+   "hw_nyloc_m5_j_s1_1_spacer_pxpy",
+   "hw_m2.5x10_shcs_j_s1_18_pi_standoff_4",
+   "hw_m2.5x10_shcs_j_s1_18_pi_standoff_3",
+   "hw_m2.5x10_shcs_j_s1_18_pi_standoff_2",
+   "hw_m2.5x10_shcs_j_s1_18_pi_standoff_1",
+   "hw_insert_m3_j_s1_16_bridge_nxny",
+   "hw_m3x10_button_j_s1_16_bridge_nxny",
+   "hw_insert_m3_j_s1_16_bridge_nxpy",
+   "hw_m3x10_button_j_s1_16_bridge_nxpy",
+   "hw_insert_m3_j_s1_16_bridge_pxny",
+   "hw_m3x10_button_j_s1_16_bridge_pxny",
+   "hw_insert_m3_j_s1_16_bridge_pxpy",
+   "hw_m3x10_button_j_s1_16_bridge_pxpy",
+   "hw_insert_m3_j_s1_31_hall_board",
+   "hw_m3x6_button_j_s1_31_hall_board",
+   "hw_m3x10_button_j_s1_31_hall_bracket_2",
+   "hw_m3x10_button_j_s1_31_hall_bracket_1",
+   "hw_m5x14_button_j_s1_32_post_top_2",
+   "hw_m5x14_button_j_s1_32_post_top_1",
+   "hw_hex_nut_m4_j_s1_13_top_clamp_6",
+   "hw_m4x18_button_j_s1_13_top_clamp_6",
+   "hw_hex_nut_m4_j_s1_13_top_clamp_5",
+   "hw_m4x18_button_j_s1_13_top_clamp_5",
+   "hw_hex_nut_m4_j_s1_13_top_clamp_4",
+   "hw_m4x18_button_j_s1_13_top_clamp_4",
+   "hw_hex_nut_m4_j_s1_13_top_clamp_3",
+   "hw_m4x18_button_j_s1_13_top_clamp_3",
+   "hw_hex_nut_m4_j_s1_13_top_clamp_2",
+   "hw_m4x18_button_j_s1_13_top_clamp_2",
+   "hw_hex_nut_m4_j_s1_13_top_clamp_1",
+   "hw_m4x18_button_j_s1_13_top_clamp_1",
+   "hw_m4x10_button_j_s1_9_seat_ring_b_6",
+   "hw_m4x10_button_j_s1_9_seat_ring_b_5",
+   "hw_m4x10_button_j_s1_9_seat_ring_b_4",
+   "hw_m4x10_button_j_s1_9_seat_ring_b_3",
+   "hw_m4x10_button_j_s1_9_seat_ring_b_2",
+   "hw_m4x10_button_j_s1_9_seat_ring_b_1",
+   "hw_m4x12_csk_j_s1_8_hub_disc_345",
+   "hw_m4x12_csk_j_s1_8_hub_disc_255",
+   "hw_m4x12_csk_j_s1_8_hub_disc_165",
+   "hw_m4x12_csk_j_s1_8_hub_disc_75",
+   "hw_m4x12_button_j_s1_5_block_nxny",
+   "hw_m4x12_button_j_s1_5_block_nxpy",
+   "hw_m4x12_button_j_s1_5_block_pxny",
+   "hw_m4x12_button_j_s1_5_block_pxpy",
+   "hw_slot_nut_m5_j_s1_33_motor_tab_nxny",
+   "hw_m5x18_button_j_s1_33_motor_tab_nxny",
+   "hw_slot_nut_m5_j_s1_33_motor_tab_nxpy",
+   "hw_m5x18_button_j_s1_33_motor_tab_nxpy",
+   "hw_slot_nut_m5_j_s1_33_motor_tab_pxny",
+   "hw_m5x18_button_j_s1_33_motor_tab_pxny",
+   "hw_slot_nut_m5_j_s1_33_motor_tab_pxpy",
+   "hw_m5x18_button_j_s1_33_motor_tab_pxpy",
+   "hw_slot_nut_m5_j_s1_4_plate_a_nxny",
+   "hw_m5x14_button_j_s1_4_plate_a_nxny",
+   "v_deck_hardpoint_-45_-40",
+   "hw_slot_nut_m5_j_s1_4_plate_a_nxpy",
+   "hw_m5x14_button_j_s1_4_plate_a_nxpy",
+   "v_deck_hardpoint_-45_40",
+   "hw_slot_nut_m5_j_s1_4_plate_a_pxny",
+   "hw_m5x14_button_j_s1_4_plate_a_pxny",
+   "v_deck_hardpoint_45_-40",
+   "hw_slot_nut_m5_j_s1_4_plate_a_pxpy",
+   "hw_m5x14_button_j_s1_4_plate_a_pxpy",
+   "v_deck_hardpoint_45_40",
+   "hw_m4x16_shcs_j_s1_27_block_3_2",
+   "hw_m4x16_shcs_j_s1_27_block_3_1",
+   "hw_m4x16_shcs_j_s1_27_block_2_2",
+   "hw_m4x16_shcs_j_s1_27_block_2_1",
+   "hw_m4x16_shcs_j_s1_27_block_1_2",
+   "hw_m4x16_shcs_j_s1_27_block_1_1",
+   "hw_m3x10_shcs_j_s1_2_motor_4",
+   "hw_washer_m3_j_s1_2_motor_4",
+   "hw_m3x10_shcs_j_s1_2_motor_3",
+   "hw_washer_m3_j_s1_2_motor_3",
+   "hw_m3x10_shcs_j_s1_2_motor_2",
+   "hw_washer_m3_j_s1_2_motor_2",
+   "hw_m3x10_shcs_j_s1_2_motor_1",
+   "hw_washer_m3_j_s1_2_motor_1",
+   "hw_m5x50_shcs_j_s1_1_spacer_nxny",
+   "hw_m5x50_shcs_j_s1_1_spacer_nxpy",
+   "hw_m5x50_shcs_j_s1_1_spacer_pxny",
+   "hw_m5x50_shcs_j_s1_1_spacer_pxpy",
+   "s_cage_mesh_top",
+   "hw_magnet_8x3_panel_top_top_4",
+   "hw_magnet_8x3_panel_top_top_3",
+   "hw_magnet_8x3_panel_top_top_2",
+   "hw_magnet_8x3_panel_top_top_1",
+   "fp9_cage_panel_top",
+   "hw_hex_nut_m3_j_s3_4_lap_left_2",
+   "hw_m3x8_button_j_s3_4_lap_left_2",
+   "hw_hex_nut_m3_j_s3_4_lap_left_1",
+   "hw_m3x8_button_j_s3_4_lap_left_1",
+   "s_cage_mesh_left",
+   "hw_magnet_8x3_panel_left_upper_2",
+   "hw_magnet_8x3_panel_left_upper_1",
+   "fp9_cage_panel_left_upper",
+   "hw_magnet_8x3_panel_left_lower_2",
+   "hw_magnet_8x3_panel_left_lower_1",
+   "fp9_cage_panel_left_lower",
+   "hw_hex_nut_m3_j_s3_4_lap_right_2",
+   "hw_m3x8_button_j_s3_4_lap_right_2",
+   "hw_hex_nut_m3_j_s3_4_lap_right_1",
+   "hw_m3x8_button_j_s3_4_lap_right_1",
+   "s_cage_mesh_right",
+   "hw_magnet_8x3_panel_right_upper_2",
+   "hw_magnet_8x3_panel_right_upper_1",
+   "fp9_cage_panel_right_upper",
+   "hw_magnet_8x3_panel_right_lower_2",
+   "hw_magnet_8x3_panel_right_lower_1",
+   "fp9_cage_panel_right_lower",
+   "hw_hex_nut_m3_j_s3_4_lap_front_2",
+   "hw_m3x8_button_j_s3_4_lap_front_2",
+   "hw_hex_nut_m3_j_s3_4_lap_front_1",
+   "hw_m3x8_button_j_s3_4_lap_front_1",
+   "s_cage_mesh_front",
+   "hw_magnet_8x3_panel_front_upper_2",
+   "hw_magnet_8x3_panel_front_upper_1",
+   "fp9_cage_panel_front_upper",
+   "hw_magnet_8x3_panel_front_lower_2",
+   "hw_magnet_8x3_panel_front_lower_1",
+   "fp9_cage_panel_front_lower",
+   "hw_hex_nut_m3_j_s3_4_lap_back_2",
+   "hw_m3x8_button_j_s3_4_lap_back_2",
+   "hw_hex_nut_m3_j_s3_4_lap_back_1",
+   "hw_m3x8_button_j_s3_4_lap_back_1",
+   "s_cage_mesh_back",
+   "hw_magnet_8x3_panel_back_upper_2",
+   "hw_magnet_8x3_panel_back_upper_1",
+   "fp9_cage_panel_back_upper",
+   "hw_magnet_8x3_panel_back_lower_2",
+   "hw_magnet_8x3_panel_back_lower_1",
+   "fp9_cage_panel_back_lower",
+   "s_cage_top_left",
+   "s_cage_top_right",
+   "s_cage_top_front",
+   "s_cage_top_back",
+   "hw_magnet_8x3_corner_top_nxny_z",
+   "hw_magnet_8x3_corner_top_nxny_y",
+   "hw_magnet_8x3_corner_top_nxny_x",
+   "fp9_cage_corner_top_nxny",
+   "hw_magnet_8x3_corner_top_nxpy_z",
+   "hw_magnet_8x3_corner_top_nxpy_y",
+   "hw_magnet_8x3_corner_top_nxpy_x",
+   "fp9_cage_corner_top_nxpy",
+   "hw_magnet_8x3_corner_top_pxny_z",
+   "hw_magnet_8x3_corner_top_pxny_y",
+   "hw_magnet_8x3_corner_top_pxny_x",
+   "fp9_cage_corner_top_pxny",
+   "hw_magnet_8x3_corner_top_pxpy_z",
+   "hw_magnet_8x3_corner_top_pxpy_y",
+   "hw_magnet_8x3_corner_top_pxpy_x",
+   "fp9_cage_corner_top_pxpy",
+   "hw_slot_nut_m5_j_s3_2_foot_nxny",
+   "hw_m5x12_button_j_s3_2_foot_nxny",
+   "hw_magnet_8x3_corner_foot_nxny_y",
+   "hw_magnet_8x3_corner_foot_nxny_x",
+   "fp9_cage_corner_foot_nxny",
+   "s_cage_post_nxny",
+   "hw_slot_nut_m5_j_s3_2_foot_nxpy",
+   "hw_m5x12_button_j_s3_2_foot_nxpy",
+   "hw_magnet_8x3_corner_foot_nxpy_y",
+   "hw_magnet_8x3_corner_foot_nxpy_x",
+   "fp9_cage_corner_foot_nxpy",
+   "s_cage_post_nxpy",
+   "hw_slot_nut_m5_j_s3_2_foot_pxny",
+   "hw_m5x12_button_j_s3_2_foot_pxny",
+   "hw_magnet_8x3_corner_foot_pxny_y",
+   "hw_magnet_8x3_corner_foot_pxny_x",
+   "fp9_cage_corner_foot_pxny",
+   "s_cage_post_pxny",
+   "hw_slot_nut_m5_j_s3_2_foot_pxpy",
+   "hw_m5x12_button_j_s3_2_foot_pxpy",
+   "hw_magnet_8x3_corner_foot_pxpy_y",
+   "hw_magnet_8x3_corner_foot_pxpy_x",
+   "fp9_cage_corner_foot_pxpy",
+   "s_cage_post_pxpy",
+   "v_grommet_g2",
+   "v_usb_panel",
+   "v_iec_inlet",
+   "v_estop_baco_lbx10510_cover_screws",
+   "v_estop_baco_lbx10510",
+   "fp9_estop_cradle",
+   "v_relay_delay",
+   "v_buck_module",
+   "v_pico",
+   "fp9_controller_carrier",
+   "v_psu_lrs_50_24",
+   "v_cl42t_driver",
+   "hw_slot_nut_m5_j_clamp_tab_nxny_2",
+   "hw_m5x14_button_j_clamp_tab_nxny_2",
+   "v_deck_hardpoint_-140_-119",
+   "hw_slot_nut_m5_j_clamp_tab_nxny_1",
+   "hw_m5x14_button_j_clamp_tab_nxny_1",
+   "v_deck_hardpoint_-119_-140",
+   "lp_clamp_tab_nxny",
+   "hw_slot_nut_m5_j_clamp_tab_nxpy_2",
+   "hw_m5x14_button_j_clamp_tab_nxpy_2",
+   "v_deck_hardpoint_-140_119",
+   "hw_slot_nut_m5_j_clamp_tab_nxpy_1",
+   "hw_m5x14_button_j_clamp_tab_nxpy_1",
+   "v_deck_hardpoint_-119_140",
+   "lp_clamp_tab_nxpy",
+   "hw_slot_nut_m5_j_clamp_tab_pxny_2",
+   "hw_m5x14_button_j_clamp_tab_pxny_2",
+   "v_deck_hardpoint_140_-119",
+   "hw_slot_nut_m5_j_clamp_tab_pxny_1",
+   "hw_m5x14_button_j_clamp_tab_pxny_1",
+   "v_deck_hardpoint_119_-140",
+   "lp_clamp_tab_pxny",
+   "hw_slot_nut_m5_j_clamp_tab_pxpy_2",
+   "hw_m5x14_button_j_clamp_tab_pxpy_2",
+   "v_deck_hardpoint_140_119",
+   "hw_slot_nut_m5_j_clamp_tab_pxpy_1",
+   "hw_m5x14_button_j_clamp_tab_pxpy_1",
+   "v_deck_hardpoint_119_140",
+   "lp_clamp_tab_pxpy",
+   "hw_m5x16_button_j_foot_nxny_leg",
+   "v_foot_bumper_nxny",
+   "hw_m5x16_button_j_foot_nxpy_leg",
+   "v_foot_bumper_nxpy",
+   "hw_m5x16_button_j_foot_pxny_leg",
+   "v_foot_bumper_pxny",
+   "hw_m5x16_button_j_foot_pxpy_leg",
+   "v_foot_bumper_pxpy",
+   "s_panel_bottom",
+   "hw_slot_nut_m5_j_deck_sheet_4",
+   "hw_m5x8_button_j_deck_sheet_4",
+   "hw_slot_nut_m5_j_deck_sheet_3",
+   "hw_m5x8_button_j_deck_sheet_3",
+   "hw_slot_nut_m5_j_deck_sheet_2",
+   "hw_m5x8_button_j_deck_sheet_2",
+   "hw_slot_nut_m5_j_deck_sheet_1",
+   "hw_m5x8_button_j_deck_sheet_1",
+   "s_panel_deck",
+   "hw_slot_nut_m5_j_panel_left_leg_nxny_bot",
+   "hw_m5x8_button_j_panel_left_leg_nxny_bot",
+   "hw_slot_nut_m5_j_panel_left_leg_nxny_top",
+   "hw_m5x8_button_j_panel_left_leg_nxny_top",
+   "hw_slot_nut_m5_j_panel_left_leg_nxpy_bot",
+   "hw_m5x8_button_j_panel_left_leg_nxpy_bot",
+   "hw_slot_nut_m5_j_panel_left_leg_nxpy_top",
+   "hw_m5x8_button_j_panel_left_leg_nxpy_top",
+   "hw_slot_nut_m5_j_panel_left_deck_p",
+   "hw_m5x8_button_j_panel_left_deck_p",
+   "hw_slot_nut_m5_j_panel_left_deck_n",
+   "hw_m5x8_button_j_panel_left_deck_n",
+   "s_panel_left",
+   "hw_slot_nut_m5_j_panel_right_leg_pxpy_bot",
+   "hw_m5x8_button_j_panel_right_leg_pxpy_bot",
+   "hw_slot_nut_m5_j_panel_right_leg_pxpy_top",
+   "hw_m5x8_button_j_panel_right_leg_pxpy_top",
+   "hw_slot_nut_m5_j_panel_right_leg_pxny_bot",
+   "hw_m5x8_button_j_panel_right_leg_pxny_bot",
+   "hw_slot_nut_m5_j_panel_right_leg_pxny_top",
+   "hw_m5x8_button_j_panel_right_leg_pxny_top",
+   "hw_slot_nut_m5_j_panel_right_deck_p",
+   "hw_m5x8_button_j_panel_right_deck_p",
+   "hw_slot_nut_m5_j_panel_right_deck_n",
+   "hw_m5x8_button_j_panel_right_deck_n",
+   "s_panel_right",
+   "hw_slot_nut_m5_j_panel_back_leg_nxpy_bot",
+   "hw_m5x8_button_j_panel_back_leg_nxpy_bot",
+   "hw_slot_nut_m5_j_panel_back_leg_nxpy_top",
+   "hw_m5x8_button_j_panel_back_leg_nxpy_top",
+   "hw_slot_nut_m5_j_panel_back_leg_pxpy_bot",
+   "hw_m5x8_button_j_panel_back_leg_pxpy_bot",
+   "hw_slot_nut_m5_j_panel_back_leg_pxpy_top",
+   "hw_m5x8_button_j_panel_back_leg_pxpy_top",
+   "hw_slot_nut_m5_j_panel_back_deck_p",
+   "hw_m5x8_button_j_panel_back_deck_p",
+   "hw_slot_nut_m5_j_panel_back_deck_n",
+   "hw_m5x8_button_j_panel_back_deck_n",
+   "s_panel_back",
+   "hw_slot_nut_m5_j_panel_front_leg_pxny_bot",
+   "hw_m5x8_button_j_panel_front_leg_pxny_bot",
+   "hw_slot_nut_m5_j_panel_front_leg_pxny_top",
+   "hw_m5x8_button_j_panel_front_leg_pxny_top",
+   "hw_slot_nut_m5_j_panel_front_leg_nxny_bot",
+   "hw_m5x8_button_j_panel_front_leg_nxny_bot",
+   "hw_slot_nut_m5_j_panel_front_leg_nxny_top",
+   "hw_m5x8_button_j_panel_front_leg_nxny_top",
+   "hw_slot_nut_m5_j_panel_front_deck_p",
+   "hw_m5x8_button_j_panel_front_deck_p",
+   "hw_slot_nut_m5_j_panel_front_deck_n",
+   "hw_m5x8_button_j_panel_front_deck_n",
+   "s_panel_front",
+   "v_frog_disc_eyes",
+   "v_frog_disc_body",
+   "v_frog_wall_eyes",
+   "v_frog_wall_body",
+   "hw_m5x16_stud_j_s1_32_stud_2",
+   "v_drum_post_2",
+   "hw_m5x16_stud_j_s1_32_stud_1",
+   "v_drum_post_1",
+   "lp_ring_top",
+   "s_top_disc",
+   "fp9_tube_seat_top",
+   "s_drum_tube",
+   "v_led_ring_ws2812",
+   "v_camera_uc261",
+   "v_rpi_zero_2w",
+   "v_power_switch",
+   "v_charge_port",
+   "fp9_camera_wedge_bridge",
+   "v_power_bank",
+   "v_pi_standoff_m2p5_4",
+   "v_pi_standoff_m2p5_3",
+   "v_pi_standoff_m2p5_2",
+   "v_pi_standoff_m2p5_1",
+   "fp9_tube_seat_bottom",
+   "lp_ring_b",
+   "v_index_magnet_6x3_n42_2",
+   "v_index_magnet_6x3_n42_1",
+   "lp_carrier_disc",
+   "v_gobilda_1313_hub",
+   "v_index_hall_ky003",
+   "fp9_hall_bracket",
+   "hw_nyloc_m5_j_s1_27_axle_3",
+   "hw_washer_m5_j_s1_27_axle_3",
+   "hw_m5x25_shcs_j_s1_27_axle_3",
+   "v_spacer_axle_10x5x1_3",
+   "v_rim_roller_creality_4001070002_3",
+   "fp12_roller_block_3",
+   "hw_nyloc_m5_j_s1_27_axle_2",
+   "hw_washer_m5_j_s1_27_axle_2",
+   "hw_m5x25_shcs_j_s1_27_axle_2",
+   "v_spacer_axle_10x5x1_2",
+   "v_rim_roller_creality_4001070002_2",
+   "fp12_roller_block_2",
+   "hw_nyloc_m5_j_s1_27_axle_1",
+   "hw_washer_m5_j_s1_27_axle_1",
+   "hw_m5x25_shcs_j_s1_27_axle_1",
+   "v_spacer_axle_10x5x1_1",
+   "v_rim_roller_creality_4001070002_1",
+   "fp12_roller_block_1",
+   "v_retainer_race_shim_8x1_3",
+   "v_retainer_race_shim_8x1_2",
+   "v_retainer_race_shim_8x1_1",
+   "v_retainer_race_spacer_8x6",
+   "v_retainer_spacer_8x6",
+   "hw_retainer_washer_lower_m4",
+   "hw_retainer_washer_upper_m4",
+   "v_gobilda_rex_shaft_2106_72",
+   "v_gobilda_1614_bearing_upper",
+   "v_gobilda_1614_bearing_lower",
+   "v_gobilda_1614_pillow_block",
+   "lp_plate_a",
+   "v_gt2_belt_100_6",
+   "v_gt2_rex_pulley_20",
+   "v_gt2_motor_pulley_20_5",
+   "v_motor_plate_spacer_4",
+   "v_motor_plate_spacer_3",
+   "v_motor_plate_spacer_2",
+   "v_motor_plate_spacer_1",
+   "v_spacer_raf_m0669_5_al_4",
+   "v_spacer_raf_m0669_5_al_3",
+   "v_spacer_raf_m0669_5_al_2",
+   "v_spacer_raf_m0669_5_al_1",
+   "fp9_motor_plate",
+   "v_nema17_shaft",
+   "v_nema17_17hs19_2004d_e1k",
+   "hw_slot_nut_m5_j_upright_top_nxny_b_leg_nxny",
+   "hw_m5x8_button_j_upright_top_nxny_b_leg_nxny",
+   "hw_slot_nut_m5_j_upright_top_nxny_a_deck_x_front",
+   "hw_m5x8_button_j_upright_top_nxny_a_deck_x_front",
+   "v_cast_bracket_2020_upright_top_nxny",
+   "hw_slot_nut_m5_j_cross_end_nxny_b_cross_left",
+   "hw_m5x8_button_j_cross_end_nxny_b_cross_left",
+   "hw_slot_nut_m5_j_cross_end_nxny_a_deck_x_front",
+   "hw_m5x8_button_j_cross_end_nxny_a_deck_x_front",
+   "v_cast_bracket_2020_cross_end_nxny",
+   "hw_slot_nut_m5_j_deck_corner_nxny_b_deck_y_left",
+   "hw_m5x8_button_j_deck_corner_nxny_b_deck_y_left",
+   "hw_slot_nut_m5_j_deck_corner_nxny_a_deck_x_front",
+   "hw_m5x8_button_j_deck_corner_nxny_a_deck_x_front",
+   "v_cast_bracket_2020_deck_corner_nxny",
+   "hw_slot_nut_m5_j_upright_top_nxpy_b_leg_nxpy",
+   "hw_m5x8_button_j_upright_top_nxpy_b_leg_nxpy",
+   "hw_slot_nut_m5_j_upright_top_nxpy_a_deck_x_back",
+   "hw_m5x8_button_j_upright_top_nxpy_a_deck_x_back",
+   "v_cast_bracket_2020_upright_top_nxpy",
+   "hw_slot_nut_m5_j_cross_end_nxpy_b_cross_left",
+   "hw_m5x8_button_j_cross_end_nxpy_b_cross_left",
+   "hw_slot_nut_m5_j_cross_end_nxpy_a_deck_x_back",
+   "hw_m5x8_button_j_cross_end_nxpy_a_deck_x_back",
+   "v_cast_bracket_2020_cross_end_nxpy",
+   "hw_slot_nut_m5_j_deck_corner_nxpy_b_deck_y_left",
+   "hw_m5x8_button_j_deck_corner_nxpy_b_deck_y_left",
+   "hw_slot_nut_m5_j_deck_corner_nxpy_a_deck_x_back",
+   "hw_m5x8_button_j_deck_corner_nxpy_a_deck_x_back",
+   "v_cast_bracket_2020_deck_corner_nxpy",
+   "hw_slot_nut_m5_j_upright_top_pxny_b_leg_pxny",
+   "hw_m5x8_button_j_upright_top_pxny_b_leg_pxny",
+   "hw_slot_nut_m5_j_upright_top_pxny_a_deck_x_front",
+   "hw_m5x8_button_j_upright_top_pxny_a_deck_x_front",
+   "v_cast_bracket_2020_upright_top_pxny",
+   "hw_slot_nut_m5_j_cross_end_pxny_b_cross_right",
+   "hw_m5x8_button_j_cross_end_pxny_b_cross_right",
+   "hw_slot_nut_m5_j_cross_end_pxny_a_deck_x_front",
+   "hw_m5x8_button_j_cross_end_pxny_a_deck_x_front",
+   "v_cast_bracket_2020_cross_end_pxny",
+   "hw_slot_nut_m5_j_deck_corner_pxny_b_deck_y_right",
+   "hw_m5x8_button_j_deck_corner_pxny_b_deck_y_right",
+   "hw_slot_nut_m5_j_deck_corner_pxny_a_deck_x_front",
+   "hw_m5x8_button_j_deck_corner_pxny_a_deck_x_front",
+   "v_cast_bracket_2020_deck_corner_pxny",
+   "hw_slot_nut_m5_j_upright_top_pxpy_b_leg_pxpy",
+   "hw_m5x8_button_j_upright_top_pxpy_b_leg_pxpy",
+   "hw_slot_nut_m5_j_upright_top_pxpy_a_deck_x_back",
+   "hw_m5x8_button_j_upright_top_pxpy_a_deck_x_back",
+   "v_cast_bracket_2020_upright_top_pxpy",
+   "hw_slot_nut_m5_j_cross_end_pxpy_b_cross_right",
+   "hw_m5x8_button_j_cross_end_pxpy_b_cross_right",
+   "hw_slot_nut_m5_j_cross_end_pxpy_a_deck_x_back",
+   "hw_m5x8_button_j_cross_end_pxpy_a_deck_x_back",
+   "v_cast_bracket_2020_cross_end_pxpy",
+   "hw_slot_nut_m5_j_deck_corner_pxpy_b_deck_y_right",
+   "hw_m5x8_button_j_deck_corner_pxpy_b_deck_y_right",
+   "hw_slot_nut_m5_j_deck_corner_pxpy_a_deck_x_back",
+   "hw_m5x8_button_j_deck_corner_pxpy_a_deck_x_back",
+   "v_cast_bracket_2020_deck_corner_pxpy",
+   "s_rail_2020_leg_nxny",
+   "s_rail_2020_leg_nxpy",
+   "s_rail_2020_leg_pxny",
+   "s_rail_2020_leg_pxpy",
+   "s_rail_2020_6",
+   "s_rail_2020_5",
+   "s_rail_2020_4",
+   "s_rail_2020_3",
+   "s_rail_2020_2",
+   "s_rail_2020_1"
+  ],
+  "triangles": 1155705,
+  "rays_per_image": 480000,
+  "rays_inside_image_circle": 453896,
+  "acrylic_parts": [
+   "s_top_disc",
+   "s_drum_tube"
+  ],
+  "transparent_parts": [
+   "s_cage_mesh_top",
+   "s_cage_mesh_left",
+   "s_cage_mesh_right",
+   "s_cage_mesh_front",
+   "s_cage_mesh_back",
+   "s_top_disc",
+   "s_drum_tube"
+  ],
+  "observer_excluded": [
+   "v_camera_uc261"
+  ],
+  "geometry": {
+   "floor_top_z": 51.0,
+   "tube_inner_r": 72.49999118569055,
+   "top_disc_under_z": 194.1750030517578
+  },
+  "glb": "out/froggy_v12_5/froggy_v12_5.glb",
+  "refraction": "ignored (straight rays through the acrylic)"
+ },
+ "configs": [
+  {
+   "name": "as_built",
+   "tilt_deg": 30.0,
+   "lens_above_disc_mm": 48.0,
+   "lens_xyz_mm": [
+    0.0,
+    0.0,
+    99.0
+   ],
+   "axis_unit": [
+    0.5,
+    -0.0,
+    0.866
+   ],
+   "top_disc_visible_fraction": 0.9873,
+   "disc_frog_visible_fraction": 0.6489,
+   "wall_frog_visible_fraction": 0.6314,
+   "disc_frog_visible_area_fraction": 0.9141,
+   "wall_frog_visible_area_fraction": 0.9353,
+   "disc_frog_facing_triangles": 413,
+   "wall_frog_facing_triangles": 407,
+   "disc_frog_unblocked_fraction": 1.0,
+   "wall_frog_unblocked_fraction": 1.0,
+   "disc_frog_facing_in_fov_fraction": 1.0,
+   "wall_frog_facing_in_fov_fraction": 1.0,
+   "disc_frog_blocked_by": {},
+   "wall_frog_blocked_by": {},
+   "frog_visibility_note": "*_visible_fraction: camera-facing triangles whose centroid ray hits that triangle first (the frog's own legs and body hide some of its facing triangles); *_unblocked_fraction: the same rays with the frog itself ignored, i.e. what the rest of the machine or the field of view takes away",
+   "disc_frog_px_per_mm": 6.82,
+   "wall_frog_px_per_mm": 9.82,
+   "disc_frog_px_area": 3991,
+   "wall_frog_px_area": 10115,
+   "disc_frog_px_area_sensor": 41896,
+   "wall_frog_px_area_sensor": 106183,
+   "top_disc_px_area": 77143,
+   "occluders": [
+    "v_drum_post_2",
+    "v_drum_post_1"
+   ],
+   "occluder_px": {
+    "v_drum_post_2": 380,
+    "v_drum_post_1": 332
+   },
+   "through_acrylic_px": {
+    "s_drum_tube": 10151
+   },
+   "top_disc_detail": {
+    "samples": 6000,
+    "in_fov": 1.0,
+    "unobstructed_if_in_fov": 0.9873
+   },
+   "frogs": {
+    "disc_frog": {
+     "centre_mm": [
+      42.95,
+      0.0,
+      197.68
+     ],
+     "in_fov": true,
+     "off_axis_deg": 6.5,
+     "range_mm": 107.6,
+     "px_per_mm": 6.82,
+     "px_per_mm_axes": [
+      6.52,
+      7.13
+     ],
+     "image_uv": [
+      373.3,
+      300.0
+     ]
+    },
+    "wall_frog": {
+     "centre_mm": [
+      75.3,
+      0.0,
+      124.18
+     ],
+     "in_fov": true,
+     "off_axis_deg": 41.5,
+     "range_mm": 79.4,
+     "px_per_mm": 9.82,
+     "px_per_mm_axes": [
+      10.54,
+      9.14
+     ],
+     "image_uv": [
+      571.2,
+      300.0
+     ]
+    }
+   },
+   "lens_inside_parts": [],
+   "in_frame_px": {
+    "fp9_camera_wedge_bridge": 35403,
+    "fp9_tube_seat_top": 32289,
+    "v_drum_post_1": 14476,
+    "lp_ring_top": 11747,
+    "fp9_cage_panel_left_upper": 10552,
+    "v_frog_wall_body": 10115,
+    "fp9_cage_panel_back_upper": 7703,
+    "fp9_cage_panel_front_upper": 7454,
+    "v_drum_post_2": 7155,
+    "s_cage_post_pxny": 6595,
+    "s_cage_post_pxpy": 5856,
+    "fp9_cage_panel_right_upper": 5574,
+    "fp9_tube_seat_bottom": 4707,
+    "v_frog_disc_body": 3985,
+    "s_cage_post_nxpy": 3457,
+    "s_cage_post_nxny": 3065,
+    "s_cage_top_left": 2468,
+    "fp9_cage_panel_right_lower": 2391,
+    "fp9_cage_panel_left_lower": 2288,
+    "fp9_cage_panel_front_lower": 2201
+   },
+   "image": "out/froggy_v12_5/camsim/as_built.png",
+   "label_image": "out/froggy_v12_5/camsim/as_built_labels.png",
+   "seconds": 17.3
+  },
+  {
+   "name": "tilt0_h48",
+   "tilt_deg": 0.0,
+   "lens_above_disc_mm": 48.0,
+   "lens_xyz_mm": [
+    0.0,
+    0.0,
+    99.0
+   ],
+   "axis_unit": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "top_disc_visible_fraction": 0.9873,
+   "disc_frog_visible_fraction": 0.6489,
+   "wall_frog_visible_fraction": 0.5799,
+   "disc_frog_visible_area_fraction": 0.9141,
+   "wall_frog_visible_area_fraction": 0.8867,
+   "disc_frog_facing_triangles": 413,
+   "wall_frog_facing_triangles": 407,
+   "disc_frog_unblocked_fraction": 1.0,
+   "wall_frog_unblocked_fraction": 0.9459,
+   "disc_frog_facing_in_fov_fraction": 1.0,
+   "wall_frog_facing_in_fov_fraction": 0.9459,
+   "disc_frog_blocked_by": {},
+   "wall_frog_blocked_by": {},
+   "frog_visibility_note": "*_visible_fraction: camera-facing triangles whose centroid ray hits that triangle first (the frog's own legs and body hide some of its facing triangles); *_unblocked_fraction: the same rays with the frog itself ignored, i.e. what the rest of the machine or the field of view takes away",
+   "disc_frog_px_per_mm": 6.91,
+   "wall_frog_px_per_mm": 10.77,
+   "disc_frog_px_area": 4076,
+   "wall_frog_px_area": 11231,
+   "disc_frog_px_area_sensor": 42788,
+   "wall_frog_px_area_sensor": 117899,
+   "top_disc_px_area": 73594,
+   "occluders": [
+    "v_drum_post_2",
+    "v_drum_post_1"
+   ],
+   "occluder_px": {
+    "v_drum_post_2": 338,
+    "v_drum_post_1": 338
+   },
+   "through_acrylic_px": {
+    "s_drum_tube": 11277
+   },
+   "top_disc_detail": {
+    "samples": 6000,
+    "in_fov": 1.0,
+    "unobstructed_if_in_fov": 0.9873
+   },
+   "frogs": {
+    "disc_frog": {
+     "centre_mm": [
+      42.95,
+      0.0,
+      197.68
+     ],
+     "in_fov": true,
+     "off_axis_deg": 23.5,
+     "range_mm": 107.6,
+     "px_per_mm": 6.91,
+     "px_per_mm_axes": [
+      6.52,
+      7.32
+     ],
+     "image_uv": [
+      497.0,
+      300.0
+     ]
+    },
+    "wall_frog": {
+     "centre_mm": [
+      75.3,
+      0.0,
+      124.18
+     ],
+     "in_fov": true,
+     "off_axis_deg": 71.5,
+     "range_mm": 79.4,
+     "px_per_mm": 10.77,
+     "px_per_mm_axes": [
+      12.69,
+      9.14
+     ],
+     "image_uv": [
+      694.9,
+      300.0
+     ]
+    }
+   },
+   "lens_inside_parts": [],
+   "in_frame_px": {
+    "v_led_ring_ws2812": 36442,
+    "fp9_camera_wedge_bridge": 35978,
+    "fp9_tube_seat_top": 30772,
+    "v_frog_wall_body": 11230,
+    "lp_ring_top": 11148,
+    "v_drum_post_1": 9870,
+    "fp9_cage_panel_left_upper": 8222,
+    "fp9_cage_panel_front_upper": 7310,
+    "fp9_cage_panel_back_upper": 7310,
+    "v_drum_post_2": 6973,
+    "fp9_cage_panel_right_upper": 6368,
+    "s_cage_post_pxny": 6029,
+    "s_cage_post_pxpy": 5404,
+    "v_frog_disc_body": 4069,
+    "s_cage_post_nxpy": 2844,
+    "s_cage_post_nxny": 2521,
+    "fp9_cage_panel_right_lower": 2427,
+    "s_cage_top_left": 2154,
+    "fp9_cage_panel_front_lower": 1989,
+    "s_cage_top_front": 1913
+   },
+   "image": "out/froggy_v12_5/camsim/tilt0_h48.png",
+   "label_image": "out/froggy_v12_5/camsim/tilt0_h48_labels.png",
+   "seconds": 10.9
+  },
+  {
+   "name": "tilt15_h48",
+   "tilt_deg": 15.0,
+   "lens_above_disc_mm": 48.0,
+   "lens_xyz_mm": [
+    0.0,
+    0.0,
+    99.0
+   ],
+   "axis_unit": [
+    0.2588,
+    0.0,
+    0.9659
+   ],
+   "top_disc_visible_fraction": 0.9873,
+   "disc_frog_visible_fraction": 0.6489,
+   "wall_frog_visible_fraction": 0.6314,
+   "disc_frog_visible_area_fraction": 0.9141,
+   "wall_frog_visible_area_fraction": 0.9353,
+   "disc_frog_facing_triangles": 413,
+   "wall_frog_facing_triangles": 407,
+   "disc_frog_unblocked_fraction": 1.0,
+   "wall_frog_unblocked_fraction": 1.0,
+   "disc_frog_facing_in_fov_fraction": 1.0,
+   "wall_frog_facing_in_fov_fraction": 1.0,
+   "disc_frog_blocked_by": {},
+   "wall_frog_blocked_by": {},
+   "frog_visibility_note": "*_visible_fraction: camera-facing triangles whose centroid ray hits that triangle first (the frog's own legs and body hide some of its facing triangles); *_unblocked_fraction: the same rays with the frog itself ignored, i.e. what the rest of the machine or the field of view takes away",
+   "disc_frog_px_per_mm": 6.82,
+   "wall_frog_px_per_mm": 10.21,
+   "disc_frog_px_area": 3993,
+   "wall_frog_px_area": 10982,
+   "disc_frog_px_area_sensor": 41917,
+   "wall_frog_px_area_sensor": 115285,
+   "top_disc_px_area": 74430,
+   "occluders": [
+    "v_drum_post_2",
+    "v_drum_post_1"
+   ],
+   "occluder_px": {
+    "v_drum_post_2": 356,
+    "v_drum_post_1": 330
+   },
+   "through_acrylic_px": {
+    "s_drum_tube": 11013
+   },
+   "top_disc_detail": {
+    "samples": 6000,
+    "in_fov": 1.0,
+    "unobstructed_if_in_fov": 0.9873
+   },
+   "frogs": {
+    "disc_frog": {
+     "centre_mm": [
+      42.95,
+      0.0,
+      197.68
+     ],
+     "in_fov": true,
+     "off_axis_deg": 8.5,
+     "range_mm": 107.6,
+     "px_per_mm": 6.82,
+     "px_per_mm_axes": [
+      6.52,
+      7.14
+     ],
+     "image_uv": [
+      435.1,
+      300.0
+     ]
+    },
+    "wall_frog": {
+     "centre_mm": [
+      75.3,
+      0.0,
+      124.18
+     ],
+     "in_fov": true,
+     "off_axis_deg": 56.5,
+     "range_mm": 79.4,
+     "px_per_mm": 10.21,
+     "px_per_mm_axes": [
+      11.4,
+      9.14
+     ],
+     "image_uv": [
+      633.0,
+      300.0
+     ]
+    }
+   },
+   "lens_inside_parts": [],
+   "in_frame_px": {
+    "fp9_tube_seat_top": 31154,
+    "v_led_ring_ws2812": 21699,
+    "fp9_camera_wedge_bridge": 18354,
+    "v_drum_post_1": 12210,
+    "lp_ring_top": 11301,
+    "v_frog_wall_body": 10982,
+    "fp9_cage_panel_left_upper": 9185,
+    "v_drum_post_2": 7438,
+    "fp9_cage_panel_back_upper": 7428,
+    "fp9_cage_panel_front_upper": 7304,
+    "s_cage_post_pxny": 7120,
+    "s_cage_post_pxpy": 6326,
+    "fp9_cage_panel_right_upper": 5896,
+    "v_frog_disc_body": 3985,
+    "s_cage_post_nxpy": 3099,
+    "s_cage_post_nxny": 2744,
+    "fp9_cage_panel_right_lower": 2617,
+    "s_cage_top_left": 2278,
+    "fp9_cage_panel_front_lower": 2260,
+    "fp9_cage_panel_left_lower": 2072
+   },
+   "image": "out/froggy_v12_5/camsim/tilt15_h48.png",
+   "label_image": "out/froggy_v12_5/camsim/tilt15_h48_labels.png",
+   "seconds": 15.6
+  },
+  {
+   "name": "tilt30_h48",
+   "tilt_deg": 30.0,
+   "lens_above_disc_mm": 48.0,
+   "lens_xyz_mm": [
+    0.0,
+    0.0,
+    99.0
+   ],
+   "axis_unit": [
+    0.5,
+    0.0,
+    0.866
+   ],
+   "top_disc_visible_fraction": 0.9873,
+   "disc_frog_visible_fraction": 0.6489,
+   "wall_frog_visible_fraction": 0.6314,
+   "disc_frog_visible_area_fraction": 0.9141,
+   "wall_frog_visible_area_fraction": 0.9353,
+   "disc_frog_facing_triangles": 413,
+   "wall_frog_facing_triangles": 407,
+   "disc_frog_unblocked_fraction": 1.0,
+   "wall_frog_unblocked_fraction": 1.0,
+   "disc_frog_facing_in_fov_fraction": 1.0,
+   "wall_frog_facing_in_fov_fraction": 1.0,
+   "disc_frog_blocked_by": {},
+   "wall_frog_blocked_by": {},
+   "frog_visibility_note": "*_visible_fraction: camera-facing triangles whose centroid ray hits that triangle first (the frog's own legs and body hide some of its facing triangles); *_unblocked_fraction: the same rays with the frog itself ignored, i.e. what the rest of the machine or the field of view takes away",
+   "disc_frog_px_per_mm": 6.82,
+   "wall_frog_px_per_mm": 9.82,
+   "disc_frog_px_area": 3991,
+   "wall_frog_px_area": 10115,
+   "disc_frog_px_area_sensor": 41896,
+   "wall_frog_px_area_sensor": 106183,
+   "top_disc_px_area": 77143,
+   "occluders": [
+    "v_drum_post_2",
+    "v_drum_post_1"
+   ],
+   "occluder_px": {
+    "v_drum_post_2": 380,
+    "v_drum_post_1": 332
+   },
+   "through_acrylic_px": {
+    "s_drum_tube": 10151
+   },
+   "top_disc_detail": {
+    "samples": 6000,
+    "in_fov": 1.0,
+    "unobstructed_if_in_fov": 0.9873
+   },
+   "frogs": {
+    "disc_frog": {
+     "centre_mm": [
+      42.95,
+      0.0,
+      197.68
+     ],
+     "in_fov": true,
+     "off_axis_deg": 6.5,
+     "range_mm": 107.6,
+     "px_per_mm": 6.82,
+     "px_per_mm_axes": [
+      6.52,
+      7.13
+     ],
+     "image_uv": [
+      373.3,
+      300.0
+     ]
+    },
+    "wall_frog": {
+     "centre_mm": [
+      75.3,
+      0.0,
+      124.18
+     ],
+     "in_fov": true,
+     "off_axis_deg": 41.5,
+     "range_mm": 79.4,
+     "px_per_mm": 9.82,
+     "px_per_mm_axes": [
+      10.54,
+      9.14
+     ],
+     "image_uv": [
+      571.2,
+      300.0
+     ]
+    }
+   },
+   "lens_inside_parts": [],
+   "in_frame_px": {
+    "fp9_camera_wedge_bridge": 35403,
+    "fp9_tube_seat_top": 32289,
+    "v_drum_post_1": 14476,
+    "lp_ring_top": 11747,
+    "fp9_cage_panel_left_upper": 10552,
+    "v_frog_wall_body": 10115,
+    "fp9_cage_panel_back_upper": 7703,
+    "fp9_cage_panel_front_upper": 7454,
+    "v_drum_post_2": 7155,
+    "s_cage_post_pxny": 6595,
+    "s_cage_post_pxpy": 5856,
+    "fp9_cage_panel_right_upper": 5574,
+    "fp9_tube_seat_bottom": 4707,
+    "v_frog_disc_body": 3985,
+    "s_cage_post_nxpy": 3457,
+    "s_cage_post_nxny": 3065,
+    "s_cage_top_left": 2468,
+    "fp9_cage_panel_right_lower": 2391,
+    "fp9_cage_panel_left_lower": 2288,
+    "fp9_cage_panel_front_lower": 2201
+   },
+   "image": "out/froggy_v12_5/camsim/tilt30_h48.png",
+   "label_image": "out/froggy_v12_5/camsim/tilt30_h48_labels.png",
+   "seconds": 16.3
+  },
+  {
+   "name": "tilt45_h48",
+   "tilt_deg": 45.0,
+   "lens_above_disc_mm": 48.0,
+   "lens_xyz_mm": [
+    0.0,
+    0.0,
+    99.0
+   ],
+   "axis_unit": [
+    0.7071,
+    0.0,
+    0.7071
+   ],
+   "top_disc_visible_fraction": 0.9873,
+   "disc_frog_visible_fraction": 0.6489,
+   "wall_frog_visible_fraction": 0.6314,
+   "disc_frog_visible_area_fraction": 0.9141,
+   "wall_frog_visible_area_fraction": 0.9353,
+   "disc_frog_facing_triangles": 413,
+   "wall_frog_facing_triangles": 407,
+   "disc_frog_unblocked_fraction": 1.0,
+   "wall_frog_unblocked_fraction": 1.0,
+   "disc_frog_facing_in_fov_fraction": 1.0,
+   "wall_frog_facing_in_fov_fraction": 1.0,
+   "disc_frog_blocked_by": {},
+   "wall_frog_blocked_by": {},
+   "frog_visibility_note": "*_visible_fraction: camera-facing triangles whose centroid ray hits that triangle first (the frog's own legs and body hide some of its facing triangles); *_unblocked_fraction: the same rays with the frog itself ignored, i.e. what the rest of the machine or the field of view takes away",
+   "disc_frog_px_per_mm": 6.89,
+   "wall_frog_px_per_mm": 9.56,
+   "disc_frog_px_area": 4119,
+   "wall_frog_px_area": 9592,
+   "disc_frog_px_area_sensor": 43240,
+   "wall_frog_px_area_sensor": 100693,
+   "top_disc_px_area": 81972,
+   "occluders": [
+    "v_drum_post_2",
+    "v_drum_post_1"
+   ],
+   "occluder_px": {
+    "v_drum_post_2": 419,
+    "v_drum_post_1": 330
+   },
+   "through_acrylic_px": {
+    "s_drum_tube": 9633
+   },
+   "top_disc_detail": {
+    "samples": 6000,
+    "in_fov": 1.0,
+    "unobstructed_if_in_fov": 0.9873
+   },
+   "frogs": {
+    "disc_frog": {
+     "centre_mm": [
+      42.95,
+      0.0,
+      197.68
+     ],
+     "in_fov": true,
+     "off_axis_deg": 21.5,
+     "range_mm": 107.6,
+     "px_per_mm": 6.89,
+     "px_per_mm_axes": [
+      6.52,
+      7.28
+     ],
+     "image_uv": [
+      311.4,
+      300.0
+     ]
+    },
+    "wall_frog": {
+     "centre_mm": [
+      75.3,
+      0.0,
+      124.18
+     ],
+     "in_fov": true,
+     "off_axis_deg": 26.5,
+     "range_mm": 79.4,
+     "px_per_mm": 9.56,
+     "px_per_mm_axes": [
+      9.99,
+      9.14
+     ],
+     "image_uv": [
+      509.3,
+      300.0
+     ]
+    }
+   },
+   "lens_inside_parts": [],
+   "in_frame_px": {
+    "fp9_camera_wedge_bridge": 41990,
+    "fp9_tube_seat_top": 34467,
+    "v_led_ring_ws2812": 21701,
+    "v_drum_post_1": 13750,
+    "lp_ring_top": 12478,
+    "v_frog_wall_body": 9592,
+    "s_cage_post_pxny": 6217,
+    "fp9_cage_panel_front_upper": 6152,
+    "v_drum_post_2": 6092,
+    "fp9_cage_panel_back_upper": 5987,
+    "s_cage_post_pxpy": 5523,
+    "fp9_cage_panel_right_upper": 5391,
+    "fp9_tube_seat_bottom": 5243,
+    "v_frog_disc_body": 4113,
+    "s_cage_top_left": 2754,
+    "s_cage_post_nxpy": 2738,
+    "s_cage_post_nxny": 2423,
+    "fp9_cage_panel_right_lower": 2265,
+    "s_cage_top_back": 2135,
+    "s_cage_top_front": 2087
+   },
+   "image": "out/froggy_v12_5/camsim/tilt45_h48.png",
+   "label_image": "out/froggy_v12_5/camsim/tilt45_h48_labels.png",
+   "seconds": 16.4
+  },
+  {
+   "name": "tilt30_h30",
+   "tilt_deg": 30.0,
+   "lens_above_disc_mm": 30.0,
+   "lens_xyz_mm": [
+    0.0,
+    0.0,
+    81.0
+   ],
+   "axis_unit": [
+    0.5,
+    0.0,
+    0.866
+   ],
+   "top_disc_visible_fraction": 0.0,
+   "disc_frog_visible_fraction": 0.0,
+   "wall_frog_visible_fraction": 0.0,
+   "disc_frog_visible_area_fraction": 0.0,
+   "wall_frog_visible_area_fraction": 0.0,
+   "disc_frog_facing_triangles": 410,
+   "wall_frog_facing_triangles": 395,
+   "disc_frog_unblocked_fraction": 0.0,
+   "wall_frog_unblocked_fraction": 0.0,
+   "disc_frog_facing_in_fov_fraction": 1.0,
+   "wall_frog_facing_in_fov_fraction": 1.0,
+   "disc_frog_blocked_by": {
+    "fp9_camera_wedge_bridge": 410
+   },
+   "wall_frog_blocked_by": {
+    "fp9_camera_wedge_bridge": 395
+   },
+   "frog_visibility_note": "*_visible_fraction: camera-facing triangles whose centroid ray hits that triangle first (the frog's own legs and body hide some of its facing triangles); *_unblocked_fraction: the same rays with the frog itself ignored, i.e. what the rest of the machine or the field of view takes away",
+   "disc_frog_px_per_mm": 5.98,
+   "wall_frog_px_per_mm": 8.41,
+   "disc_frog_px_area": 0,
+   "wall_frog_px_area": 0,
+   "disc_frog_px_area_sensor": 0,
+   "wall_frog_px_area_sensor": 0,
+   "top_disc_px_area": 0,
+   "occluders": [
+    "fp9_camera_wedge_bridge"
+   ],
+   "occluder_px": {
+    "fp9_camera_wedge_bridge": 67834
+   },
+   "through_acrylic_px": {},
+   "top_disc_detail": {
+    "samples": 6000,
+    "in_fov": 1.0,
+    "unobstructed_if_in_fov": 0.0
+   },
+   "frogs": {
+    "disc_frog": {
+     "centre_mm": [
+      42.95,
+      0.0,
+      197.68
+     ],
+     "in_fov": true,
+     "off_axis_deg": 9.8,
+     "range_mm": 124.3,
+     "px_per_mm": 5.98,
+     "px_per_mm_axes": [
+      5.78,
+      6.19
+     ],
+     "image_uv": [
+      359.6,
+      300.0
+     ]
+    },
+    "wall_frog": {
+     "centre_mm": [
+      75.3,
+      0.0,
+      124.18
+     ],
+     "in_fov": true,
+     "off_axis_deg": 30.2,
+     "range_mm": 86.8,
+     "px_per_mm": 8.41,
+     "px_per_mm_axes": [
+      9.24,
+      7.65
+     ],
+     "image_uv": [
+      524.4,
+      300.0
+     ]
+    }
+   },
+   "lens_inside_parts": [
+    "fp9_camera_wedge_bridge"
+   ],
+   "in_frame_px": {
+    "fp9_camera_wedge_bridge": 453896
+   },
+   "image": "out/froggy_v12_5/camsim/tilt30_h30.png",
+   "label_image": "out/froggy_v12_5/camsim/tilt30_h30_labels.png",
+   "seconds": 17.1,
+   "if_mount_moved": {
+    "top_disc_visible_fraction": 0.9873,
+    "disc_frog_visible_fraction": 0.661,
+    "wall_frog_visible_fraction": 0.4506,
+    "disc_frog_unblocked_fraction": 1.0,
+    "wall_frog_unblocked_fraction": 0.8127,
+    "disc_frog_px_per_mm": 5.98,
+    "wall_frog_px_per_mm": 8.41,
+    "disc_frog_px_area": 3132,
+    "wall_frog_px_area": 5542,
+    "occluders": [
+     "v_led_ring_ws2812",
+     "v_drum_post_2",
+     "v_drum_post_1"
+    ],
+    "image": "out/froggy_v12_5/camsim/tilt30_h30_mount_moved.png",
+    "label_image": "out/froggy_v12_5/camsim/tilt30_h30_mount_moved_labels.png",
+    "note": "same virtual camera with fp9_camera_wedge_bridge left out (the lens point is inside it; a seat for this height would move)"
+   }
+  },
+  {
+   "name": "tilt30_h66",
+   "tilt_deg": 30.0,
+   "lens_above_disc_mm": 66.0,
+   "lens_xyz_mm": [
+    0.0,
+    0.0,
+    117.0
+   ],
+   "axis_unit": [
+    0.5,
+    0.0,
+    0.866
+   ],
+   "top_disc_visible_fraction": 0.9873,
+   "disc_frog_visible_fraction": 0.6466,
+   "wall_frog_visible_fraction": 0.6388,
+   "disc_frog_visible_area_fraction": 0.9137,
+   "wall_frog_visible_area_fraction": 0.9331,
+   "disc_frog_facing_triangles": 399,
+   "wall_frog_facing_triangles": 407,
+   "disc_frog_unblocked_fraction": 1.0,
+   "wall_frog_unblocked_fraction": 1.0,
+   "disc_frog_facing_in_fov_fraction": 1.0,
+   "wall_frog_facing_in_fov_fraction": 1.0,
+   "disc_frog_blocked_by": {},
+   "wall_frog_blocked_by": {},
+   "frog_visibility_note": "*_visible_fraction: camera-facing triangles whose centroid ray hits that triangle first (the frog's own legs and body hide some of its facing triangles); *_unblocked_fraction: the same rays with the frog itself ignored, i.e. what the rest of the machine or the field of view takes away",
+   "disc_frog_px_per_mm": 7.87,
+   "wall_frog_px_per_mm": 10.92,
+   "disc_frog_px_area": 5255,
+   "wall_frog_px_area": 11852,
+   "disc_frog_px_area_sensor": 55165,
+   "wall_frog_px_area_sensor": 124418,
+   "top_disc_px_area": 103675,
+   "occluders": [
+    "v_drum_post_2",
+    "v_drum_post_1"
+   ],
+   "occluder_px": {
+    "v_drum_post_2": 481,
+    "v_drum_post_1": 412
+   },
+   "through_acrylic_px": {
+    "s_drum_tube": 11898
+   },
+   "top_disc_detail": {
+    "samples": 6000,
+    "in_fov": 1.0,
+    "unobstructed_if_in_fov": 0.9873
+   },
+   "frogs": {
+    "disc_frog": {
+     "centre_mm": [
+      42.95,
+      0.0,
+      197.68
+     ],
+     "in_fov": true,
+     "off_axis_deg": 2.0,
+     "range_mm": 91.4,
+     "px_per_mm": 7.87,
+     "px_per_mm_axes": [
+      7.39,
+      8.38
+     ],
+     "image_uv": [
+      391.9,
+      300.0
+     ]
+    },
+    "wall_frog": {
+     "centre_mm": [
+      75.3,
+      0.0,
+      124.18
+     ],
+     "in_fov": true,
+     "off_axis_deg": 54.6,
+     "range_mm": 75.6,
+     "px_per_mm": 10.92,
+     "px_per_mm_axes": [
+      11.83,
+      10.07
+     ],
+     "image_uv": [
+      625.0,
+      300.0
+     ]
+    }
+   },
+   "lens_inside_parts": [],
+   "in_frame_px": {
+    "fp9_tube_seat_top": 38976,
+    "lp_ring_top": 16093,
+    "v_drum_post_1": 14847,
+    "v_frog_wall_body": 11852,
+    "fp9_tube_seat_bottom": 11816,
+    "fp9_cage_panel_left_upper": 7584,
+    "s_cage_post_pxny": 6981,
+    "fp9_cage_panel_right_upper": 6625,
+    "v_drum_post_2": 6572,
+    "s_cage_post_pxpy": 6200,
+    "v_frog_disc_body": 5250,
+    "fp9_cage_panel_front_upper": 4883,
+    "fp9_cage_panel_back_upper": 4785,
+    "s_cage_post_nxpy": 3344,
+    "s_cage_post_nxny": 3001,
+    "s_cage_top_left": 2892,
+    "s_cage_top_back": 2472,
+    "s_cage_top_front": 2454,
+    "fp9_cage_panel_right_lower": 2427,
+    "s_cage_top_right": 1888
+   },
+   "image": "out/froggy_v12_5/camsim/tilt30_h66.png",
+   "label_image": "out/froggy_v12_5/camsim/tilt30_h66_labels.png",
+   "seconds": 15.4
+  }
+ ],
+ "montage": "out/froggy_v12_5/camsim/montage.png",
+ "feasibility_issues": [
+  "as_built (tilt 30, h 48): fp9_camera_wedge_bridge is in frame (35403 px)",
+  "tilt0_h48 (tilt 0, h 48): 5% of the wall frog's camera-facing surface is cut off (5% lies outside the sensor image)",
+  "tilt30_h30 (tilt 30, h 30): the lens point lies inside fp9_camera_wedge_bridge, so this height needs a different seat; with that part left out the view gives top disc 99%, disc frog 6.0 px/mm, wall frog 8.4 px/mm"
+ ],
+ "recommendation": "As built (tilt 30 deg, lens 48 mm above the disc) the camera sees 99% of the top disc inside the tube and nothing on the rotor blocks either frog (100% / 100% of their camera-facing triangles unblocked; 65% / 63% are seen first, the rest hidden by the frogs' own legs), at 6.8 px/mm on the disc frog and 9.8 px/mm on the wall frog, so the placement works for both frogs. The best configuration of the sweep is tilt30_h66 (tilt 30 deg, h 66 mm: top disc 99%, disc frog 65% at 7.9 px/mm, wall frog 64% at 10.9 px/mm), scored on coverage of both frogs and the disc plus resolution. Resolution is not the limit: every configuration clear of its mount gives at least 6.8 px/mm on both frogs at the full 2592 x 1944 sensor (the brief's floor is 2); the lens heights below the bridge top (30 mm) put the lens inside fp9_camera_wedge_bridge and would need a new seat; steeper tilts push the -X edge of the top disc out of the frame (as_built 99%, tilt0_h48 99%, tilt15_h48 99%, tilt30_h48 99%, tilt45_h48 99%, tilt30_h66 99%). tilt30_h66 only buys about 15% more resolution, so the as-built 30 deg / 48 mm placement works and can stay.",
+ "fails": [],
+ "seconds": 125.0
+}

@@ -1,0 +1,21 @@
+{
+ "name": "goBILDA 1313-1632-4008 1313 Series Hyper Hub (8mm REX Bore, 32mm pattern)",
+ "url": "https://www.gobilda.com/1313-series-hyper-hub-8mm-rex-bore/",
+ "drawing_url": "https://www.gobilda.com/content/spec_sheets/1313-1632-4008%20Spec%20Sheet.pdf",
+ "step_url": "https://www.gobilda.com/content/step_files/1313-1632-4008.zip",
+ "file": "1313-1632-4008.step",
+ "price_usd": 12.99,
+ "mass_g": 30.0,
+ "datasheet": {
+  "overall_height": 22.0,
+  "flange_thickness": 6.0,
+  "flange": "X of four arms, 40 x 40 over the arm ends, M4 tapped (3.3) through on the 32 mm square (+-16, +-16) plus the 16 mm pattern",
+  "pilot_boss": "14 dia x 2 on the flange face",
+  "shoulder": "32 dia under the flange (Z -11.4..-6 from the flange face)",
+  "clamp": "24 dia split clamp, 2 x M4 pinch bolts (in the STEP)",
+  "bottom_boss": "11 dia x 0.5 on the clamp end face: bears on a bearing inner race"
+ },
+ "author": "goBILDA (vendor STEP)",
+ "licence": "vendor CAD download",
+ "fetched": "2026-10-11"
+}

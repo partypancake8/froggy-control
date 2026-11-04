@@ -1,0 +1,13 @@
+{
+ "name": "6 x 3 mm N42 neodymium disc magnets, Ni-Cu-Ni, axially magnetised (120 pack)",
+ "url": "https://totalelement.com/products/6-x-3-mm-neodymium-rare-earth-permanent-disc-magnets-n42-120-pack",
+ "author": "Total Element (listing dimensions)",
+ "licence": "modelled from listing dimensions",
+ "file": "assemblies/froggy_v9.py:_magnet",
+ "price_usd": 24.79,
+ "price_note": "per 120 pack, 2 used",
+ "dims_mm": {"d": 6.0, "t": 3.0, "tolerance": "+-0.1 (0.004 in)"},
+ "grade": "N42", "coating": "Ni-Cu-Ni", "magnetisation": "axial, poles on the flat faces", "pull_lb": 2,
+ "mass_g": 0.64,
+ "fetched": "2026-10-12"
+}

@@ -1,0 +1,200 @@
+{
+ "command": "design",
+ "ok": true,
+ "commit": null,
+ "sheet": "out/froggy_v12_5/sheet.json",
+ "checked": {
+  "components": 477,
+  "joints": 153,
+  "DL1 envelope": 477,
+  "DL3 vendor": 86,
+  "DL5/DL6 material": 477,
+  "DL10 screws": 156,
+  "DL12 band": 74,
+  "DL12 net": 75,
+  "DL13 wiring": 0,
+  "DL16 subsystems": 15,
+  "DL17 naming": 477,
+  "DL18 sub-assemblies": 32,
+  "DL27 drum posts": 2,
+  "DL28 rim rollers": 3,
+  "DL20 printed colours": 2,
+  "DL21 connector faces": 1,
+  "DL22 guard": 1,
+  "envelope": {
+   "footprint_xy": [
+    [
+     -153.0,
+     -153.0
+    ],
+    [
+     153.0,
+     153.0
+    ]
+   ],
+   "z": [
+    -123.0,
+    304.0
+   ],
+   "deck_top_z": 3.0
+  },
+  "caps": {
+   "parts": 12,
+   "fasteners": 40
+  },
+  "previous": false
+ },
+ "summary": {
+  "DL3": 13,
+  "DL6": 4,
+  "DL10": 3,
+  "DL13": 1,
+  "DL18": 1,
+  "DL22": 1
+ },
+ "by_severity": {
+  "fail": 19,
+  "review": 4
+ },
+ "violation_count": 23,
+ "violations": [
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_pi_standoff_m2p5_1",
+   "detail": "vendor part with no source_url and no file: catalogue (M2.5 x 6 F-F hex standoff)"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_pi_standoff_m2p5_2",
+   "detail": "vendor part with no source_url and no file: catalogue (M2.5 x 6 F-F hex standoff)"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_pi_standoff_m2p5_3",
+   "detail": "vendor part with no source_url and no file: catalogue (M2.5 x 6 F-F hex standoff)"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_pi_standoff_m2p5_4",
+   "detail": "vendor part with no source_url and no file: catalogue (M2.5 x 6 F-F hex standoff)"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_foot_bumper_pxpy",
+   "detail": "vendor part with no source_url and no file: catalogue (rubber bumper foot 20 x 8, M5 counterbored)"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_foot_bumper_pxny",
+   "detail": "vendor part with no source_url and no file: catalogue (rubber bumper foot 20 x 8, M5 counterbored)"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_foot_bumper_nxpy",
+   "detail": "vendor part with no source_url and no file: catalogue (rubber bumper foot 20 x 8, M5 counterbored)"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_foot_bumper_nxny",
+   "detail": "vendor part with no source_url and no file: catalogue (rubber bumper foot 20 x 8, M5 counterbored)"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_psu_lrs_50_24",
+   "detail": "plain box stand-in (14 faces, fills 100% of its bbox) instead of the vendor's model"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_pico",
+   "detail": "plain box stand-in (6 faces, fills 100% of its bbox) instead of the vendor's model"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_buck_module",
+   "detail": "plain box stand-in (6 faces, fills 100% of its bbox) instead of the vendor's model"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_relay_delay",
+   "detail": "plain box stand-in (6 faces, fills 100% of its bbox) instead of the vendor's model"
+  },
+  {
+   "rule": "DL3",
+   "severity": "fail",
+   "component": "v_usb_panel",
+   "detail": "plain box stand-in (10 faces, fills 99% of its bbox) instead of the vendor's model"
+  },
+  {
+   "rule": "DL6",
+   "severity": "fail",
+   "component": "fp9_motor_plate",
+   "detail": "printed part named as a ring/plate/disc/hub"
+  },
+  {
+   "rule": "DL6",
+   "severity": "review",
+   "component": "fp9_tube_seat_bottom",
+   "detail": "printed part on the rotor: allowed only as a cradle that carries no rotor load; the reviewer must confirm the load path in the part header"
+  },
+  {
+   "rule": "DL6",
+   "severity": "review",
+   "component": "fp9_camera_wedge_bridge",
+   "detail": "printed part on the rotor: allowed only as a cradle that carries no rotor load; the reviewer must confirm the load path in the part header"
+  },
+  {
+   "rule": "DL6",
+   "severity": "review",
+   "component": "fp9_tube_seat_top",
+   "detail": "printed part on the rotor: allowed only as a cradle that carries no rotor load; the reviewer must confirm the load path in the part header"
+  },
+  {
+   "rule": "DL10",
+   "severity": "fail",
+   "component": "Drive cartridge / Plate A",
+   "detail": "3 screw families (not dictated by a vendor thread): M3 BHCS x3, M5 BHCS x4, M5 SHCS x4"
+  },
+  {
+   "rule": "DL10",
+   "severity": "fail",
+   "component": "Drive cartridge / Rim rollers",
+   "detail": "2 screw families (not dictated by a vendor thread): M4 SHCS x6, M5 SHCS x3"
+  },
+  {
+   "rule": "DL10",
+   "severity": "fail",
+   "component": "Electrical / E-stop station",
+   "detail": "2 screw families (not dictated by a vendor thread): M3 BHCS x4, M4 BHCS x2"
+  },
+  {
+   "rule": "DL13",
+   "severity": "fail",
+   "component": "(whole machine)",
+   "detail": "53 electrical components and 0 modelled wires, harnesses, clips, glands or strain reliefs: no wire has a route"
+  },
+  {
+   "rule": "DL18",
+   "severity": "review",
+   "component": "Frame / Corner brackets",
+   "detail": "48 fastener pieces (cap 40; a review prompt: state the reason)"
+  },
+  {
+   "rule": "DL22",
+   "severity": "fail",
+   "component": "lp_carrier_disc",
+   "detail": "42 mm open band between the deck top (Z 3) and the spinning disc underside: hub and collar are on show and reachable; no skirt or guard part (add one around the support, DL26)"
+  }
+ ]
+}

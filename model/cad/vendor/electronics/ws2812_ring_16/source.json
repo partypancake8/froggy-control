@@ -1,0 +1,22 @@
+{
+ "name": "WS2812B 16 LED ring (Adafruit NeoPixel Ring 16, product 1463 footprint), white RGB 5050, 5 V",
+ "url": "https://github.com/adafruit/Adafruit_CAD_Parts/blob/main/1463%2016x%20NeoPixel%20Ring/1463%2016x%20NeoPixel%20Ring.step",
+ "raw_url": "https://raw.githubusercontent.com/adafruit/Adafruit_CAD_Parts/main/1463%2016x%20NeoPixel%20Ring/1463%2016x%20NeoPixel%20Ring.step",
+ "product_url": "https://www.adafruit.com/product/1463",
+ "amazon_url": "https://www.amazon.com/dp/B0C77XPKSL",
+ "amazon_alt_url": "https://www.amazon.com/dp/B0BY8Z9L92",
+ "author": "Adafruit Industries",
+ "licence": "MIT (Adafruit_CAD_Parts LICENSE, Copyright (c) 2016 Adafruit Industries)",
+ "file": "neopixel_ring_16.step",
+ "price_usd": 11.99,
+ "price_note": "assumed for the Sparkleiot 5 pack (listing price not read), one ring used",
+ "dims_mm": {"outer_d": 44.45, "inner_hole_d": 31.75, "board_t": 1.6, "overall_t": 3.3, "led_count": 16,
+             "led_package": "WS2812B 5050", "led_pkg_mm": [5.0, 5.0, 1.7], "led_circle_r": 19.0, "led_pitch_deg": 22.5,
+             "source": "read from the vendor STEP with build123d (17 solids: board 44.45 x 1.6, hole from the board volume 1216.1 mm3 = 31.75, 16 LEDs 5.0 x 5.0 x 1.7 centred on r 19.0)"},
+ "electrical": {"voltage": "5 V", "data": "WS2812 single wire DIN from the Pi (PWM/SPI GPIO, 3.3 V logic into a 5 V part: works in practice, a 74AHCT125 level shifter is the safe fix)",
+                "current_ma": 290, "current_note": "about 290 mA white with brightness capped near 30 % (about 18 mA per LED); full white is up to 960 mA (Adafruit: 60 mA per pixel); the rotor budget carries 300 mA at 5 V"},
+ "step_header": "1463 16x NeoPixel Ring.step, PRODUCT '16x NeoPixel Ring v3', 2018-07-07, author videopixil, Autodesk Translation Framework",
+ "why": "I032 (2026-10-28): Sawyer switched from the 850 nm Spinel IR ring to a normal LED ring 'just to be safe', Amazon preferred, must have a model. The Amazon generic 16 LED WS2812B rings (Sparkleiot 5 pack B0C77XPKSL, listed 45 OD / 32 hole; Stemedu 2 pack B0BY8Z9L92) share the Adafruit NeoPixel Ring 16 footprint, so the Adafruit STEP is the model.",
+ "notes": "the Amazon ring is the same footprint as the Adafruit ring (44.5 vs 45 OD, 31.75 vs 32 hole); pad layout and silkscreen may differ, unmeasured",
+ "fetched": "2026-10-28"
+}

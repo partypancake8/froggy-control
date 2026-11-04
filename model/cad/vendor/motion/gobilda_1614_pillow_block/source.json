@@ -1,0 +1,20 @@
+{
+ "name": "goBILDA 1614-0016-4008 Dual-Bearing Pillow Block (8mm REX Bore)",
+ "url": "https://www.gobilda.com/dual-bearing-pillow-block-8mm-rex-bore/",
+ "drawing_url": "https://www.gobilda.com/content/spec_sheets/1614-0016-4008-spec-sheet.pdf",
+ "step_url": "https://www.gobilda.com/content/step_files/1614-0016-4008.zip",
+ "file": "1614-0016-4008.step",
+ "price_usd": 11.99,
+ "mass_g": 24.0,
+ "datasheet": {
+  "housing_od": 31.95,
+  "length": 16.0,
+  "bearings": "2 x 15 OD x 5 wide, REX bore, faces flush with both housing ends",
+  "bearing_centres_mm": 11.0,
+  "pattern": "M4 tapped (3.3 tap drill) on a 16 mm square (+-8, +-8) in both end faces, four 7.2 oval slots on the axes at r 11.3",
+  "material": "aluminium housing, high-carbon steel bearings, clear anodised"
+ },
+ "author": "goBILDA (vendor STEP)",
+ "licence": "vendor CAD download",
+ "fetched": "2026-10-11"
+}

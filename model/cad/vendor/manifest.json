@@ -1,0 +1,493 @@
+{
+ "v_nema17": {
+  "key": "v_nema17",
+  "format": "step",
+  "units": "mm",
+  "datum": {
+   "axis": [
+    1,
+    0,
+    0
+   ],
+   "angle_deg": 90,
+   "translate_mm": [
+    0,
+    0,
+    0
+   ],
+   "description": "Shaft is source +Y; mounting face is Y0. Cable/connector bodies kept separately from mechanical frame."
+  },
+  "expected_envelope": [
+   [
+    -21.15,
+    -21.15,
+    -68.51614
+   ],
+   [
+    21.15,
+    74.19376,
+    24.0
+   ]
+  ],
+  "envelope_evidence": "Fusion import audit out/vendor_import_test.audit.json, 2026-10-05; tolerance 0.5 mm",
+  "appearance": "vendor native",
+  "source_url": "https://www.omc-stepperonline.com/nema-17-closed-loop-stepper-motor-52ncm-73-64oz-in-with-encoder-1000ppr-4000cpr-17hs19-2004d-e1k",
+  "price_usd": "18.75 motor alone; 48.86 as kit CL42T-S05-V41 with the CL42T driver",
+  "mechanical_body_names": [
+   "Body1",
+   "Body2",
+   "Body3",
+   "Body5",
+   "Body18",
+   "Body19",
+   "Body24"
+  ],
+  "mechanical_envelope": [
+   [
+    -21.15,
+    -21.15,
+    -68.51614
+   ],
+   [
+    21.15,
+    21.15,
+    24
+   ]
+  ],
+  "lead_keepout": [
+   [
+    -21.15,
+    -21.15,
+    -68.51614
+   ],
+   [
+    21.15,
+    74.19376,
+    24.0
+   ]
+  ],
+  "cache_schema": 4,
+  "copied_from": "~/cad/fusion-pipeline/vendor/froggy/manifest.json",
+  "download_url": "https://www.omc-stepperonline.com/index.php?route=product/product/get_file&file=3164/17HS19-2004D-E1K.STEP",
+  "author": "STEPPERONLINE",
+  "licence": "vendor CAD (manufacturer download)",
+  "file": "motion/stepperonline_17hs19_2004d_e1k/17HS19-2004D-E1K.step",
+  "designation": "17HS19-2004D-E1K closed-loop NEMA 17, 1000 ppr encoder"
+ },
+ "v_servocity_1308_0016_0005_lightweight_set_screw_hub_5mm": {
+  "key": "v_servocity_1308_0016_0005_lightweight_set_screw_hub_5mm",
+  "format": "step",
+  "units": "mm",
+  "datum": {
+   "axis": [
+    1,
+    0,
+    0
+   ],
+   "angle_deg": 90,
+   "translate_mm": [
+    34.87324050558982,
+    17.103599390054566,
+    1.9752373826392666
+   ],
+   "description": "Source +Y axis mapped to +Z; centre of mounting face."
+  },
+  "expected_envelope": [
+   [
+    -12.0,
+    -12.0,
+    0.0
+   ],
+   [
+    12.0,
+    12.0,
+    8.0
+   ]
+  ],
+  "envelope_evidence": "Fusion import audit out/vendor_import_test.audit.json, 2026-10-05; tolerance 0.5 mm",
+  "appearance": "vendor native",
+  "source_url": "https://www.servocity.com/1308-series-lightweight-set-screw-hub-5mm-bore/",
+  "price_usd": "5.99",
+  "copied_from": "~/cad/fusion-pipeline/vendor/froggy/manifest.json",
+  "download_url": "https://www.servocity.com/content/step_files/1308-0016-0005.zip",
+  "author": "ServoCity",
+  "licence": "vendor CAD (manufacturer download)",
+  "file": "coupling/servocity-1308-0016-0005-lightweight-set-screw-hub-5mm.step",
+  "designation": "1308-0016-0005 lightweight set-screw hub, 5 mm bore"
+ },
+ "v_bearing_6814": {
+  "key": "v_bearing_6814",
+  "format": "catalogue_model",
+  "units": "mm",
+  "datum": {
+   "axis": null,
+   "angle_deg": 0,
+   "translate_mm": [
+    0,
+    0,
+    0
+   ],
+   "description": "Local mounting face at Z0; concentric Z axis"
+  },
+  "expected_envelope": [
+   [
+    -45,
+    -45,
+    0
+   ],
+   [
+    45,
+    45,
+    10
+   ]
+  ],
+  "source_url": "https://www.vxb.com/products/6814-2rs-bearing-70x90x10-sealed",
+  "price_usd": 19.95,
+  "price_status": "BUDGET ESTIMATE ONLY; no 6814 price in the supplied purchase list, network prohibited. Catalogue URL not checked this run.",
+  "envelope_evidence": "Standard 6814-2RS dimensions 70 x90 x10; internal race split is an envelope assumption.",
+  "appearance": "modelled catalogue colours",
+  "model": [
+   {
+    "type": "ring",
+    "name": "Inner race",
+    "od": 75,
+    "id": 70,
+    "h": 10,
+    "z": 0,
+    "colour": [
+     165,
+     170,
+     175
+    ]
+   },
+   {
+    "type": "ring",
+    "name": "Outer race",
+    "od": 90,
+    "id": 85,
+    "h": 10,
+    "z": 0,
+    "colour": [
+     165,
+     170,
+     175
+    ]
+   },
+   {
+    "type": "ring",
+    "name": "Seals and rolling-element envelope",
+    "od": 85,
+    "id": 75,
+    "h": 8,
+    "z": 1,
+    "colour": [
+     35,
+     38,
+     40
+    ]
+   }
+  ],
+  "copied_from": "~/cad/fusion-pipeline/vendor/froggy/manifest.json",
+  "author": "catalogue (ISO 15 6814-2RS)",
+  "licence": "modelled from catalogue dimensions",
+  "file": "lib/hardware.py:bearing_6814_2rs",
+  "designation": "6814-2RS 70 x 90 x 10"
+ },
+ "v_camera_fisheye": {
+  "key": "v_camera_fisheye",
+  "format": "catalogue_model",
+  "units": "mm",
+  "datum": {
+   "axis": null,
+   "angle_deg": 0,
+   "translate_mm": [
+    0,
+    0,
+    0
+   ],
+   "description": "Local mounting face at Z0; concentric Z axis"
+  },
+  "expected_envelope": [
+   [
+    -12.5,
+    -12,
+    0
+   ],
+   [
+    12.5,
+    12,
+    11.6
+   ]
+  ],
+  "source_url": "https://www.waveshare.com/imx219-160-camera.htm?sku=16679",
+  "price_usd": 24.99,
+  "price_status": "recorded local purchase list, 2026-10-05",
+  "envelope_evidence": "fisheye-cameras.md: Waveshare IMX219-200 $24.99; task board 25 x24, lens D12 H10. Integrated IR filter is unresolved.",
+  "appearance": "modelled catalogue colours",
+  "model": [
+   {
+    "type": "box",
+    "name": "IMX219 camera PCB",
+    "lo": [
+     -12.5,
+     -12,
+     0
+    ],
+    "hi": [
+     12.5,
+     12,
+     1.6
+    ],
+    "colour": [
+     35,
+     110,
+     60
+    ]
+   },
+   {
+    "type": "ring",
+    "name": "Fisheye lens barrel D12 H10",
+    "od": 12,
+    "id": 0,
+    "h": 10,
+    "z": 1.6,
+    "colour": [
+     35,
+     38,
+     40
+    ]
+   }
+  ],
+  "copied_from": "~/cad/fusion-pipeline/vendor/froggy/manifest.json",
+  "author": "Waveshare",
+  "licence": "modelled envelope",
+  "file": "lib/hardware.py:camera_fisheye_imx219_160",
+  "designation": "IMX219-160 fisheye camera module"
+ },
+ "v_gobilda_1310_hub_8mm": {
+  "key": "v_gobilda_1310_hub_8mm",
+  "format": "step",
+  "units": "mm",
+  "source_url": "https://www.servocity.com/1310-series-hyper-hub-8mm-bore/",
+  "download_url": "https://www.servocity.com/content/step_files/1310-0016-0008.zip",
+  "author": "goBILDA / ServoCity",
+  "licence": "vendor CAD (manufacturer download)",
+  "file": "coupling/gobilda-1310-0016-0008-hyper-hub-8mm.step",
+  "price_usd": "unverified",
+  "designation": "1310-0016-0008 Hyper Hub, 8 mm clamping bore, 16 mm pattern M4 tapped",
+  "fetched": "2026-10-06",
+  "note": "zip also on gobilda.com (same part, 2025 export); the four M4 thread crests are bored to the 3.3 tap drill on import so the simple screw model does not clash"
+ },
+ "v_coupling_jaw_5_8": {
+  "key": "v_coupling_jaw_5_8",
+  "format": "step",
+  "units": "mm",
+  "source_url": "https://www.amazon.com/dp/B0FM48Y2YS",
+  "model_url": "https://github.com/earthtojake/step.parts/blob/main/catalog/step/jaw_coupling_bore5_to_8.step",
+  "author": "MECCANIXITY (bought part); envelope model step.parts",
+  "licence": "envelope model",
+  "file": "coupling/jaw-coupling-bore5-to-8-envelope.step",
+  "price_usd": "unverified",
+  "designation": "jaw coupling 5 mm to 8 mm, D25 x L30 (modelled by the 24 x 32 envelope)"
+ },
+ "v_bearing_608": {
+  "key": "v_bearing_608",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "catalogue ISO 15 608-2RS 8 x 22 x 7",
+  "author": "catalogue",
+  "licence": "modelled from catalogue dimensions",
+  "file": "lib/hardware.py:bearing_608_2rs",
+  "price_usd": "unverified",
+  "designation": "608-2RS 8 x 22 x 7"
+ },
+ "v_shaft_collar_8mm": {
+  "key": "v_shaft_collar_8mm",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "catalogue 8 mm bore set-screw collar 16 OD x 8",
+  "author": "catalogue",
+  "licence": "modelled envelope",
+  "file": "lib/hardware.py:shaft_collar_8mm",
+  "price_usd": "unverified",
+  "designation": "8 mm set-screw shaft collar"
+ },
+ "v_washer_8mm": {
+  "key": "v_washer_8mm",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "catalogue 8.2 x 12 x 1.0 bearing spacer (608 inner race)",
+  "author": "catalogue",
+  "licence": "modelled envelope",
+  "file": "lib/hardware.py:ring",
+  "price_usd": "unverified",
+  "designation": "608 inner-race spacer 8.2 x 12 x 1"
+ },
+ "s_shaft_8mm": {
+  "key": "s_shaft_8mm",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "8 mm h6 ground steel shaft, cut to 72 mm",
+  "author": "stock",
+  "licence": "stock",
+  "file": "assemblies/froggy_v6.py",
+  "price_usd": "unverified",
+  "designation": "8 mm steel shaft x 72"
+ },
+ "v_qi_kit": {
+  "key": "v_qi_kit",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "https://www.amazon.com/dp/B0C73H3BJ9",
+  "author": "Qi TX/RX module kit",
+  "licence": "modelled envelope (coil 40 OD x 34 ID x 2.3, boards 30 x 20 x 1.6, dimensions unverified)",
+  "file": "lib/hardware.py:ring/pcb_box",
+  "price_usd": "unverified",
+  "designation": "5 V wireless power TX + RX coil and boards"
+ },
+ "v_ir_led_5mm": {
+  "key": "v_ir_led_5mm",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "https://www.amazon.com/dp/B01BVGIZIU",
+  "author": "5 mm 940 nm IR LED",
+  "licence": "modelled envelope (T-1 3/4)",
+  "file": "lib/hardware.py:ir_led_5mm",
+  "price_usd": "unverified",
+  "designation": "5 mm IR LED 940 nm"
+ },
+ "v_hall_a3144": {
+  "key": "v_hall_a3144",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "https://www.amazon.com/dp/B01NBE2XIR",
+  "author": "A3144 hall switch",
+  "licence": "modelled envelope",
+  "file": "lib/hardware.py:hall_a3144_module",
+  "price_usd": "unverified",
+  "designation": "A3144 unipolar hall switch on breakout"
+ },
+ "v_magnet_6x3": {
+  "key": "v_magnet_6x3",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "https://www.amazon.com/dp/B0FMP58G7B",
+  "author": "N52 disc magnet",
+  "licence": "modelled envelope",
+  "file": "lib/hardware.py:magnet_6x3",
+  "price_usd": "unverified",
+  "designation": "6 x 3 neodymium disc magnet"
+ },
+ "v_rpi_zero_2w": {
+  "key": "v_rpi_zero_2w",
+  "format": "step",
+  "units": "mm",
+  "source_url": "https://github.com/AndrewK0val/CAD-Models/blob/master/Raspberry%20Pi%20Zero%202%20W.STEP",
+  "author": "AndrewK0val (community model)",
+  "licence": "community CAD model",
+  "file": "electronics/rpi-zero-2w.step",
+  "price_usd": "19.05 (Adafruit 5291); 15.00 MSRP",
+  "designation": "Raspberry Pi Zero 2 W",
+  "copied_from": "~/cad/fusion-pipeline/vendor/froggy/manifest.json"
+ },
+ "v_cl42t": {
+  "source_url": "https://www.omc-stepperonline.com/closed-loop-stepper-driver-v4-1-0-3-0a-24-48vdc-for-nema-11-14-17-stepper-motor-cl42t-v41",
+  "file": "drive/stepperonline-cl42t-v41-driver.step",
+  "author": "STEPPERONLINE",
+  "licence": "vendor model",
+  "price_usd": 36.39,
+  "designation": "CL42T-V41 closed-loop driver",
+  "step_file_url": "https://www.omc-stepperonline.com/index.php?route=product/product/get_file&file=3272/CL42T-V41.STEP (driver page https://www.omc-stepperonline.com/closed-loop-stepper-driver-v4-1-0-3-0a-24-48vdc-for-nema-11-14-17-stepper-motor-cl42t-v41)"
+ },
+ "v_estop_22mm": {
+  "source_url": "https://github.com/FreeCAD/FreeCAD-library/tree/master/Electrical%20Parts/Push%20buttons",
+  "file": "hardware/estop-22mm-mushroom.step",
+  "author": "FreeCAD-library",
+  "licence": "CC-BY 3.0 (FreeCAD-library)",
+  "price_usd": 10,
+  "designation": "22 mm mushroom e-stop in its 70 x 70 box (box inside the plinth, button through the front panel)"
+ },
+ "v_psu_lrs_50_24": {
+  "source_url": "https://www.meanwell.com/productPdf.aspx?i=459",
+  "file": "lib/hardware.py:box (99 x 82 x 30, 4 x M3 tapped in the base)",
+  "author": "MEAN WELL",
+  "licence": "catalogue envelope",
+  "price_usd": 14,
+  "designation": "LRS-50-24, 24 V 2.2 A"
+ },
+ "v_iec_inlet": {
+  "source_url": "https://www.amazon.com/s?k=IEC+C14+fused+switched+inlet",
+  "file": "lib/hardware.py:box (48 x 28 x 30)",
+  "author": "catalogue",
+  "licence": "catalogue envelope",
+  "price_usd": 6,
+  "designation": "IEC C14 inlet, fuse + switch"
+ },
+ "v_usb_panel": {
+  "source_url": "https://www.amazon.com/s?k=USB-C+panel+mount",
+  "file": "lib/hardware.py:box",
+  "author": "catalogue",
+  "licence": "catalogue envelope",
+  "price_usd": 4,
+  "designation": "USB-C panel mount extension"
+ },
+ "v_pico": {
+  "source_url": "https://www.raspberrypi.com/products/raspberry-pi-pico/",
+  "file": "lib/hardware.py:pcb_box (51 x 21 x 1.6)",
+  "author": "Raspberry Pi",
+  "licence": "catalogue envelope",
+  "price_usd": 4,
+  "designation": "Raspberry Pi Pico"
+ },
+ "v_buck_module": {
+  "source_url": "https://www.amazon.com/dp/B0DBVYP91F",
+  "file": "lib/hardware.py:box (43 x 21 x 14)",
+  "author": "catalogue",
+  "licence": "catalogue envelope",
+  "price_usd": 1.6,
+  "designation": "24 V to 5 V buck"
+ },
+ "v_relay_delay": {
+  "source_url": "https://www.amazon.com/s?k=delay+off+relay+module+12V+24V",
+  "file": "lib/hardware.py:box (50 x 26 x 18)",
+  "author": "catalogue",
+  "licence": "catalogue envelope",
+  "price_usd": 4,
+  "designation": "delay-off relay, 3 s, to the CL42T ENA"
+ },
+ "v_led_driver": {
+  "source_url": "https://www.amazon.com/s?k=constant+current+LED+driver+board",
+  "file": "lib/hardware.py:pcb_box (25 x 20 x 1.6)",
+  "author": "catalogue",
+  "licence": "catalogue envelope",
+  "price_usd": 2,
+  "designation": "IR LED constant-current driver"
+ },
+ "v_grommet_8mm": {
+  "source_url": "https://www.mcmaster.com/grommets/",
+  "file": "lib/hardware.py:grommet (8 mm hole)",
+  "author": "catalogue",
+  "licence": "catalogue envelope",
+  "price_usd": 0.2,
+  "designation": "8 mm rubber grommet"
+ },
+ "v_foot_placeholder": {
+  "source_url": "placeholder, final foot to be chosen by Sawyer",
+  "file": "assemblies/froggy_v7.py:_feet",
+  "author": "froggy-cad",
+  "licence": "n/a",
+  "price_usd": 0,
+  "designation": "14 x 14 x 10 placeholder foot"
+ },
+ "v_hall_a3144_v7": {
+  "key": "v_hall_a3144",
+  "format": "catalogue_model",
+  "units": "mm",
+  "source_url": "https://www.amazon.com/dp/B01NBE2XIR",
+  "author": "A3144 hall switch",
+  "licence": "modelled envelope",
+  "file": "lib/hardware.py:hall_a3144_module",
+  "price_usd": "unverified",
+  "designation": "A3144 module 32 x 14 x 1.6 (HiLetgo)"
+ }
+}

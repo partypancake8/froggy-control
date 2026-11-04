@@ -1,0 +1,18 @@
+{
+ "name": "Anker 321 Power Bank (PowerCore 5K), model A1112",
+ "url": "https://www.anker.com/products/a1112",
+ "datasheet": "https://service.anker.com/article-description/Introduction-to-Anker-321-Power-Bank-PowerCore-5K-Model-Number-A1112",
+ "author": "catalogue (outline modelled in assemblies/froggy_v8.py:_bank_solid from the published dimensions)",
+ "licence": "modelled from published dimensions",
+ "file": "assemblies/froggy_v8.py:_bank_solid",
+ "price_usd": 16.0,
+ "price_note": "typical US street price, unverified",
+ "dimensions_mm": {"length": 96.0, "width": 45.2, "thickness": 23.1,
+                   "source": "Micro Center listing 3.78 x 1.78 x 0.91 in (96.01 x 45.21 x 23.11 mm); edge radii modelled (R5 long edges, R1.5 ends)"},
+ "mass_g": 118,
+ "capacity": {"mAh": 5200, "Wh_rated": 19.24, "note": "5200 mAh is Anker's total nominal cell capacity; Wh = 5.2 Ah x 3.7 V"},
+ "ports": {"usb_c": "input and output, 5 V 2.4 A (12 W)", "usb_a": "output, 5 V 2.4 A (12 W)", "total_output": "5 V 2.4 A (12 W) shared"},
+ "low_current_auto_off": "Not published by Anker. Anker banks typically cut off below roughly 50 to 100 mA (unverified). The A1112 has a trickle-charging mode for low-power devices (double-press the button).",
+ "use_on_rotor": "USB-A out -> KCD1 rocker in the 5 V lead -> Pi micro-USB; USB-C is the charge input from v_charge_port",
+ "fetched": "2026-10-11"
+}

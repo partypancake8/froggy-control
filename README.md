@@ -67,6 +67,10 @@ Run/cache files use `~/.cache/froggy` (`FROGGY_RUN_DIR` override). Camera test r
 
 Imported from `ROB450/Frog/software/motor` and the six `~/bin/froggy-*` tools on October 26, 2026. Original files remain in place. Motor control logic, wiring documents and bench evidence were preserved. Import edits make Mac paths relative/configurable, prefer the explicit motor-host override, remove an embedded historical login hash, require an explicit flash target and avoid printing generated credential-bearing setup content. See [STATUS.md](docs/STATUS.md) for limitations.
 
+## Model and simulation assets
+
+The V12.5 turntable CAD lives in [`model/`](model/README.md): the headless build123d source and viewer (`model/cad/`), ready-made GLB, STEP and STL exports with camera-simulation renders (`model/exports/`), and one machine-readable parameter file for rotor, drum, camera, motor, drive, frog and target numbers (`model/sim-params.json`). [docs/SIMULATION.md](docs/SIMULATION.md) explains how to rebuild the model, run the viewer, load the GLB into a simulator, and which numbers feed a slip model and synthetic camera video.
+
 ## Public distribution
 
 See [PUBLIC-REVIEW.md](docs/PUBLIC-REVIEW.md) for the publication review and [THIRD-PARTY.md](THIRD-PARTY.md) for bundled package notices. This repository is publicly readable; no additional license for the project-authored code is granted by publication alone.

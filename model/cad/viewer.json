@@ -1,0 +1,6 @@
+{
+  "environment": "PROD",
+  "revision": "V12.5",
+  "assembly": "froggy_v12_5",
+  "port": 7894
+}
