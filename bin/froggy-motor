@@ -1,7 +1,8 @@
 #!/bin/zsh
 export FROGGY_PI_USER="${FROGGY_PI_USER:-froggy}"
 [[ "$FROGGY_PI_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || { echo "Invalid FROGGY_PI_USER" >&2; exit 2; }
-# froggy-motor: run the Froggy Turntable DM320T motor tests on froggy-pi, or locally in dry run.
+# froggy-motor: run the Froggy Turntable motor tests (CL57T-V41 closed loop, or the old DM320T) on
+# the main Pi, or locally in dry run.
 # Code lives in this checkout's motor/ directory.
 BIN_DIR="${0:A:h}"
 S="${FROGGY_MOTOR_DIR:-$BIN_DIR/../motor}"
@@ -9,19 +10,30 @@ PORT_DEFAULT=7895
 
 usage() {
 cat <<'EOF'
-froggy-motor: DM320T stepper test tool for the Froggy Turntable (froggy-pi, Pi 3 B+)
+froggy-motor: CL57T-V41 / DM320T stepper test tool for the Froggy Turntable (main Pi, Pi 3 B+)
 
   froggy-motor ui [--port 7895] [--no-open] [--locked]
                                               control page: camera, ramp/stop/STOP, live RPM chart;
                                               --locked serves the page but refuses every ramp
   froggy-motor ramp --rpm R --accel-s A --hold-s H --decel-s D [--dir cw|ccw] [--log f.csv]
+  froggy-motor speed --rpm R [--accel-s A] [--dir cw|ccw]
+                                              run continuously until Stop or Ctrl-C
+                                              speed change time defaults to 3 seconds; set --accel-s to change it
+  froggy-motor cl-test --rpm R [--hold-s 10] [--accel-s A] [--decel-s D] [--dir cw|ccw]
+                                              closed-loop test: ramp, hold, stop; logs ALM, PEND,
+                                              hall and encoder RPM every 100 ms to logs/cl-test-*.csv
+                                              and ends with a "verdict: reached N RPM ..." line
   froggy-motor stop                           emergency decel of a running ramp, then ENA off
   froggy-motor estop-test [--s 5]             read and watch the mushroom e-stop input
   froggy-motor index-test --s N [--rpm R]     count hall index pulses, report RPM
-  froggy-motor status                         backend, config, input levels
+  froggy-motor status                         backend, driver model, config, e-stop / ALM / PEND levels
+  froggy-motor trials list                    saved trials (one gzip record per actuation, rest to rest)
+  froggy-motor trials export <id|latest> [--csv PATH] [--json PATH]
+                                              one trial as CSV (stdout when no path) or JSON; paths are on the Pi
+  froggy-motor trials prune                   apply trials_keep / trials_max_mb from motor.toml now
   froggy-motor deploy                         copy code + install pigpio on the Pi (offline ok)
   froggy-motor --pull-logs                    copy the Pi's CSV logs into motor/logs/
-  froggy-motor --dry-run <command ...>        run locally on this Mac with the fake pigpio
+  froggy-motor --dry-run <command ...>        run locally on this laptop with the fake pigpio
   froggy-motor --which-host                   print the Pi address that will be used
 
 Without --dry-run every command first deploys (fast when nothing changed), then runs on the Pi

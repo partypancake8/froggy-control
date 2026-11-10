@@ -1,0 +1,66 @@
+Images used by ../schematic-cl57t.html (and its render ../schematic-cl57t.png). Only wires, labels,
+resistor values and yellow marks are drawn by hand; every picture below is an original or a crop.
+sha256 of each file is listed so a later swap is visible.
+
+rpi-gpio-pinout.png
+  Crop (x 840..1950, y 95..1095) of the official Raspberry Pi GPIO pinout diagram
+  https://www.raspberrypi.com/documentation/computers/images/GPIO-Pinout-Diagram-2.png
+  from https://www.raspberrypi.com/documentation/computers/raspberry-pi.html (GPIO section).
+  Licence: CC BY-SA 4.0, Raspberry Pi Ltd (Raspberry Pi documentation licence).
+
+cl57t-label-fig2.png
+  CL57T(V4.0) user manual, printed page 3, Figure 2 (driver label art), rendered at 200 dpi with
+  pdftoppm, cropped to the label, rotated 90 degrees so the text reads upright, and the manual's red
+  callout lines removed. Source PDF (not in this repository): CL57T-V4.0-manual.pdf from
+  https://www.stepperonline.co.uk/download/CL57T_V4.0.pdf
+  Licence: STEPPERONLINE vendor documentation, all rights reserved; used here as a reference for a
+  student project.
+
+cl57t-s1-table.png, cl57t-microstep-table.png, cl57t-mode-table.png
+  Same manual, printed pages 6 (S1 table, section 5.1) and 7 (microstep table 5.2.1, mode table
+  5.2.2), 200 dpi crops. Same source and licence as above.
+
+vendor-article-cl57t-v41-wiring.jpg
+  STEPPERONLINE help article "Wiring diagram for closed loop stepper motor",
+  https://help.omc-stepperonline.com/hc/s/articles/wiring-diagram-for-closed-loop-stepper-motor
+  image 24e1k-cl57t-v41 (CL57T-V41 with a 24E1K motor, controller, supply), saved from that article
+  on 2026-11-09. Licence: STEPPERONLINE vendor material, all rights reserved.
+
+vendor-article-motor-table-grn-blk-red-blu.png
+  Same article, the motor lead and encoder table for GRN/BLK/RED/BLU motors (image 777). Kept for the
+  record; not placed in the drawing. Note its encoder table lists 8 leads (with EZ), which does not
+  match the 6-core cable on our E1K. Same licence.
+
+cl57t-v41-photo.jpg
+  Vendor product photo, https://www.omc-stepperonline.com/image/cache/catalog/stepper-driver/CL57T-V41-1000x1000.jpg
+  (cached 400 px copy from the team purchasing list, retrieved 2026-10-28). Not placed in the current drawing. Licence: STEPPERONLINE, all rights reserved.
+
+17hs19-2004d-e1k-photo.jpg
+  Vendor listing photo of the 17HS19-2004D-E1K, https://m.media-amazon.com/images/I/51l3mwvaqwL._SL1000_.jpg
+  (listing https://www.amazon.com/dp/B0C8984QFM/, cached 400 px copy from
+  the team purchasing list, retrieved 2026-10-28). Licence: STEPPERONLINE, all rights reserved.
+
+17hs19-2004d-e1000-leads.png
+  Crops of the coil lead table and the encoder table from the 17HS19-2004D-E1000 drawing
+  (17HS19-2004D-E1000-datasheet.pdf, not in this repository, from https://www.stepperonline.co.uk/download/17HS19-2004D-E1000.pdf),
+  200 dpi, stacked. Licence: STEPPERONLINE vendor documentation, all rights reserved.
+
+2n7000-to92.svg, 2n7000-to92.png
+  "TO-92 2N7000.svg" by Hans Schou, https://commons.wikimedia.org/wiki/File:TO-92_2N7000.svg
+  (file https://upload.wikimedia.org/wikipedia/commons/e/ea/TO-92_2N7000.svg). The PNG is an
+  unmodified 700 px render of the SVG with rsvg-convert on a white background.
+  Licence: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0).
+
+Checksums (sha256):
+  f31b325eedabdb32a226d1820f9dfc907e5ecd165fdc30d00edd5e2bb3b7e9b1  17hs19-2004d-e1000-leads.png
+  03a4dab47fc27a03b6cf05c50f41233714da814dbdb3af1b18795622c46bc743  2n7000-to92.png
+  fc43d30b5dda75370f5131cde3371b8972fc851366ef133dc8dd567e458d22ba  cl57t-label-fig2.png
+  049379f3949e5b297648e1e283ed94d21d203898a2cbd474d4022a22311f8540  cl57t-microstep-table.png
+  afa8bea96839e1b63ad4dcb4b093d4d2d11870d76f3eacebb811b81129c0e5ed  cl57t-mode-table.png
+  ac55f6796bfd6ed2e5581fae329b94312cd35901fa853ac53461c27dcf71274c  cl57t-s1-table.png
+  d1a99b609ca4aaee66bbc3b76b04a58c6203e4af240b1066f5646aadf11a20ae  rpi-gpio-pinout.png
+  20c0c874866723ef30b94a783415adde85efbd559d784352113fb1b53aab28a2  vendor-article-motor-table-grn-blk-red-blu.png
+  cd4c8973d72657d0066d1f5770261218aaec6e9ead9c6c10fc2c2eccf5fb8c14  17hs19-2004d-e1k-photo.jpg
+  42753a65a905b009ea3ac6823bb738830373c500d573c2b9ec3852609a9e07a5  cl57t-v41-photo.jpg
+  82c01af08f95f5f838594e6f7fb1a49c3a1b8466dc23ae3e21352a796451d74d  vendor-article-cl57t-v41-wiring.jpg
+  563867e58e61dc0576d46c4252b72b7bdc8132e7e20a0c694257b022fc9c6e32  2n7000-to92.svg

@@ -35,3 +35,7 @@ pi-host
 pi-campus
 pi-tailscale
 *.bundle
+motor/trials/
+motor/ui/screenshots/
+motor/ui/.api-server.log
+motor/*.pdf

@@ -1,0 +1,266 @@
+/* Froggy motor control: plain classic engineering panel. Flat surfaces, 1 px solid borders, titled group boxes,
+   no shadows, gradients, glows or rounded corners. Night is the default (data-theme="dark" on <html>);
+   day via the toggle. The OS colour preference is ignored on purpose. */
+:root{
+  color-scheme:light;
+  --body:#c4c4c4;--face:#d9d9d9;--line:#6e6e6e;--cap:#00467a;--fg:#000000;--fg2:#262626;
+  --btn:#ececec;--btnline:#404040;--btnfg:#000000;--dis-fg:#5a5a5a;
+  --go:#157a2a;--gofg:#ffffff;--goline:#000000;--stop:#b00000;--stopfg:#ffffff;
+  --estop:#d40000;--estopfg:#ffffff;--collar:#ffd200;
+  --sel:#0a3d73;--selfg:#ffffff;
+  --field:#ffffff;--fieldfg:#000000;--fieldline:#6e6e6e;--focus:#00467a;
+  --title:#1f2f44;--titlefg:#ffffff;
+  --conn-bg:#000000;--conn-line:#6a6a6a;--conn-ok:#3cff5a;--conn-retry:#ffb000;--conn-bad:#ff5050;--conn-wait:#d9d9d9;
+  --ok:#0a6b1a;--amber:#7a4800;--bad:#a00000;
+  --warnbg:#ffd84d;--warnfg:#000000;--alarmbg:#b00000;--alarmfg:#ffffff;
+  --led-off:#8c8c8c;--led-run:#1fbf35;--led-fault:#e00000;--led-warn:#f0a000;--led-estop:#e00000;--led-rim:#000000;
+  --dro:#ffffff;--drofg:#000000;
+  /* real time readouts: light values on a black face in both themes */
+  --m-face:#000000;--m-fg:#ffffff;--m-unit:#cccccc;--m-lit:#3cff5a;--m-amber:#ffb000;--m-red:#ff4d4d;
+  /* trend: white plotting area by day (near-black Commanded trace), black at night */
+  --t-bg:#ffffff;--t-grid:#c8c8c8;--t-axis:#000000;--t-cmd:#111111;--t-cmdsw:#111111;--t-enc:#004fc0;--t-ferr:#a3007a;--t-tagbg:#ffffff;
+  --cam-bg:#000000;
+
+  --sans:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;
+  --fs:clamp(14px,calc(0.45vw + 7.5px),16px);
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --body:#0a0a0a;--face:#161616;--line:#6b6b6b;--cap:#5cc8f0;--fg:#f2f2f2;--fg2:#cccccc;
+  --btn:#262626;--btnline:#8a8a8a;--btnfg:#f2f2f2;--dis-fg:#a6a6a6;
+  --sel:#1f5a8c;--selfg:#ffffff;
+  --field:#000000;--fieldfg:#ffffff;--fieldline:#6b6b6b;--focus:#5cc8f0;
+  --title:#202020;--titlefg:#ffffff;
+  --ok:#3cff5a;--amber:#ffb000;--bad:#ff5c5c;
+  --warnbg:#5c4300;--warnfg:#ffffff;
+  --led-off:#3a3a3a;--led-run:#22e33a;--led-fault:#ff2a2a;--led-warn:#ffb000;--led-estop:#ff2a2a;--led-rim:#8a8a8a;
+  --dro:#000000;--drofg:#ffffff;
+  --t-bg:#000000;--t-grid:#3a3a3a;--t-axis:#f2f2f2;--t-cmd:#ffffff;--t-cmdsw:#ffffff;--t-enc:#3d9bff;--t-ferr:#ff6ad5;--t-tagbg:#000000;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--body);color:var(--fg)}
+html{overflow-x:hidden}
+body{font:400 var(--fs)/1.3 var(--sans);min-height:100vh;display:flex;flex-direction:column}
+button,input{font:inherit;color:var(--fg)}
+button{color:var(--btnfg)}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:-4px}
+[hidden]{display:none!important}
+
+/* buttons: flat rectangles with a 1 px border; fields: flat boxes with a 1 px border */
+.pb,.tbbtn,.radios button,.spinbtns button,.xbtn{background:var(--btn);border:1px solid var(--btnline);border-radius:0;color:var(--btnfg)}
+/* Tabler icons from the vendored sprite; colour is currentColor from the parent token */
+.ic{width:16px;height:16px;flex:none;vertical-align:-3px;stroke-width:2;overflow:visible}
+.ic.s12{width:12px;height:12px;vertical-align:-1px}.ic.s14{width:14px;height:14px;vertical-align:-2px}
+.ic.s18{width:18px;height:18px;vertical-align:-4px}.ic.s30{width:30px;height:30px}.ic.s32{width:32px;height:32px}
+.ic.thin{stroke-width:1.75}
+.pb,.tbbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.dro,.pv,.msgbox,.spin input,.numf input,.ls,.sbp,#rawjson,#logtail{border:1px solid var(--fieldline);border-radius:0}
+
+/* ---------- title bar ---------- */
+.titlebar{flex:none;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;
+  background:var(--title);color:var(--titlefg);padding:4px 6px 4px 8px;min-width:0}
+.tb-title{display:flex;align-items:center;gap:8px;min-width:0}
+h1{margin:0;font:700 var(--fs)/1.25 var(--sans);color:var(--titlefg);min-width:0}
+.badge{display:inline-flex;align-items:center;gap:4px;font:700 12px/1 var(--sans);padding:3px 6px;border:1px solid var(--titlefg);color:var(--titlefg);white-space:nowrap}
+.tb-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.tbbtn{padding:3px 10px;min-height:26px;font-size:13px}
+.connfield{display:inline-flex;align-items:center;gap:6px;background:var(--conn-bg);border:1px solid var(--conn-line);padding:3px 10px 3px 7px;min-height:26px;
+  font:700 13px/1.2 var(--sans);color:var(--conn-wait);min-width:0}
+.connfield[data-link="ok"]{color:var(--conn-ok)}
+.connfield[data-link="retry"]{color:var(--conn-retry)}
+.connfield[data-link="down"]{color:var(--conn-bad)}
+
+/* ---------- LED lamps: plain filled circles with a 1 px border ---------- */
+.led{display:inline-block;flex:none;width:16px;height:16px;border-radius:50%;background:var(--led-off);border:1px solid var(--led-rim)}
+.led.g{background:var(--led-run)}.led.r{background:var(--led-fault)}.led.a{background:var(--led-warn)}.led.e{background:var(--led-estop)}
+.led.dg,.led.dr{background:var(--led-off)}
+
+.strip{flex:none;display:flex;align-items:center;gap:8px;padding:6px 10px;font-weight:700;background:var(--warnbg);color:var(--warnfg);border-bottom:1px solid var(--line)}
+
+/* ---------- panel grid ---------- */
+.panel{flex:1 1 auto;display:flex;flex-direction:column;gap:14px;padding:14px 10px 10px;min-width:0;min-height:0;background:var(--face)}
+.colcmd,.colside{display:flex;flex-direction:column;gap:14px;min-width:0;min-height:0}
+
+/* titled group box: 1 px border with the caption on the line */
+.grp{position:relative;min-width:0;min-height:0;border:1px solid var(--line);padding:16px 10px 10px}
+.cap{position:absolute;top:-0.72em;left:9px;margin:0;padding:0 5px;background:var(--face);font:700 var(--fs)/1.3 var(--sans);color:var(--cap);white-space:nowrap}
+
+/* ---------- command ---------- */
+.control{display:flex;flex-direction:column}
+.frow{display:grid;grid-template-columns:7.2em minmax(0,1fr);align-items:center;gap:8px;margin:0 0 8px}
+.flbl{font-weight:600}
+.radios{display:flex;flex-direction:column;gap:4px;min-width:0}
+.radios.two{flex-direction:row}
+.radios.two button{flex:1}
+.radios button{display:flex;align-items:center;gap:8px;text-align:left;padding:4px 10px 4px 8px;min-height:30px}
+.radios button::before{content:"";flex:none;box-sizing:border-box;width:14px;height:14px;border-radius:50%;background:var(--field);border:1px solid var(--btnline)}
+.radios button[aria-checked="true"]{background:var(--sel);color:var(--selfg);font-weight:700}
+.radios button[aria-checked="true"]::before{border:2px solid var(--selfg);padding:2px;background:var(--selfg);background-clip:content-box}
+.radios button:disabled{color:var(--dis-fg);border-style:dashed;cursor:not-allowed}
+.radios button[aria-checked="true"]:disabled{color:var(--selfg)}
+
+.spin,.numf{display:flex;align-items:stretch;min-width:0}
+.spin input,.numf input{flex:1 1 auto;min-width:0;width:100%;background:var(--field);color:var(--fieldfg);padding:4px 8px;min-height:30px;
+  font:600 var(--fs)/1.2 var(--sans);font-variant-numeric:tabular-nums;text-align:right}
+.spinbtns{display:flex;flex-direction:column;flex:none;width:20px}
+.spinbtns button{flex:1;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.unit{flex:none;align-self:center;padding-left:7px;min-width:2.2em;font-weight:600;color:var(--fg2)}
+.trackbar{margin:0 0 10px calc(7.2em + 8px)}
+#rpmslider{width:100%;margin:2px 0 0}
+.ticks{display:flex;justify-content:space-between;color:var(--fg2);font:12px/1.2 var(--sans);font-variant-numeric:tabular-nums;margin:0 2px}
+.ticks span{position:relative;padding-top:5px;width:0;display:flex;justify-content:center;white-space:nowrap}
+.ticks span::before{content:"";position:absolute;top:0;left:0;width:1px;height:4px;background:var(--fg2)}
+
+.hint{margin:2px 0 10px;font-size:calc(var(--fs) * .93);color:var(--fg2)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.pb{min-height:40px;padding:6px 12px;font-weight:700}
+.pb.go{background:var(--go);color:var(--gofg);border-color:var(--goline)}
+.pb.stop{background:var(--stop);color:var(--stopfg);border-color:var(--goline)}
+.pb:disabled{background:var(--btn);color:var(--dis-fg);border:1px dashed var(--btnline);cursor:not-allowed}
+.msgbox{margin:0;padding:6px 8px;background:var(--field);color:var(--fieldfg);min-height:3.6em;font-size:calc(var(--fs) * .93)}
+.linkline{display:flex;align-items:center;gap:6px;margin:0 0 10px;padding:6px 8px;font:700 13px/1.3 var(--sans);background:var(--conn-bg);border:1px solid var(--conn-bad);color:var(--conn-bad)}
+.linkline.retry{border-color:var(--conn-retry);color:var(--conn-retry)}
+
+/* emergency stop: red round button on a plain yellow ring, 160 px across, always visible */
+.estopwrap{flex:none;display:flex;justify-content:center;align-items:center;padding:14px 10px 8px}
+.estopring{--es:160px;flex:none;width:var(--es);height:var(--es);border-radius:50%;background:var(--collar);border:1px solid #000;padding:16px}
+#estop{position:relative;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;border-radius:50%;
+  border:1px solid var(--goline);background:var(--estop);color:var(--estopfg);font:800 15px/1.15 var(--sans)}
+
+/* ---------- real time data: LabVIEW style cluster, a 3 x 2 grid of equal recessed indicators ---------- */
+.rt{display:flex;flex-direction:column}
+.rtband{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px}
+.rv{container-type:size;min-width:0;min-height:0;overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr);
+  border:1px solid var(--fieldline);background:var(--m-face);color:var(--m-fg);padding:4px 8px 4px 8px}
+.rv .flbl{font-size:var(--fs);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--m-unit)}
+.rv .vv{align-self:end;min-width:0;text-align:right;white-space:nowrap;overflow:hidden;line-height:1}
+.rvbox{font:700 min(60cqh,20.4cqw)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--m-fg)}
+.rv .u{font:600 clamp(12px,15cqh,20px)/1 var(--sans);color:var(--m-unit)}
+.rvbox.state{font-size:min(43.2cqh,13.8cqw)}
+#ferrtile.amber .rvbox,#ferrtile.amber + .ferrpct .rvbox{color:var(--m-amber)}
+#ferrtile.bad .rvbox,#ferrtile.bad + .ferrpct .rvbox{color:var(--m-red)}
+.rvbox.state.hold{color:var(--m-lit)}.rvbox.state.amber{color:var(--m-amber)}.rvbox.state.bad{color:var(--m-red)}
+.lbox{display:grid;grid-template-columns:7.2em minmax(0,1fr);align-items:center;gap:8px}
+.state{font-weight:700}
+.state.bad{color:var(--bad)}.state.amber{color:var(--amber)}.state.hold{color:var(--ok)}
+
+/* ---------- trend ---------- */
+.uplot{font-family:inherit}
+.trend{display:flex;flex-direction:column;gap:6px}
+.trendhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;font-weight:600}
+.trendhead .pb{min-height:26px;padding:2px 12px;font-size:13px}
+.trendhead #trendttl{color:var(--fg)}
+.legend{display:inline-flex;align-items:center;gap:8px;font:700 14px/1.2 var(--sans)}
+.sw{display:inline-block;width:26px;height:3px;margin-left:10px}
+.sw.cmd{background:var(--t-cmdsw)}.sw.enc{background:var(--t-enc)}
+.chartbox{position:relative;flex:1 1 auto;min-height:0;border:1px solid var(--line)}
+#chart{position:absolute;inset:1px}
+.tag{position:absolute;right:4px;transform:translateY(-50%);font:700 14px/1.2 var(--sans);font-variant-numeric:tabular-nums;padding:2px 6px;background:var(--t-tagbg);white-space:nowrap}
+.tag b{font:700 14px/1 var(--sans);margin-left:6px}
+.tag.cmd{color:var(--t-cmd);border:1px solid var(--t-cmd)}.tag.enc{color:var(--t-enc);border:1px solid var(--t-enc)}
+
+/* ---------- I/O, parameters, camera, trials ---------- */
+.io{display:flex;flex-direction:column;gap:6px}
+.lamp{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:8px}
+.ll{font-weight:600}
+.ls{min-width:7.5em;padding:1px 8px;background:var(--field);color:var(--fieldfg);font:600 13px/1.3 var(--sans);text-align:center;white-space:nowrap}
+.params{display:flex;flex-direction:column;gap:4px}
+.params .lbox,.lastrun .lbox{grid-template-columns:7.6em minmax(0,1fr)}
+.pv{padding:1px 7px;background:var(--field);color:var(--fieldfg);font:600 13px/1.35 var(--sans);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-height:1.6em}
+.camgrp{flex:none}
+.cam{position:relative;width:100%;max-width:calc(18vh * 16 / 9);margin:0 auto;aspect-ratio:16/9;background:var(--cam-bg);
+  border:1px solid var(--conn-line);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--cam-bg)}
+/* the camera face is black in both themes, so its label uses the light --m-unit grey (as on the black Data tiles) */
+.camlbl{display:flex;flex-direction:column;align-items:center;gap:4px;font:600 13px/1.3 var(--sans);color:var(--m-unit);padding:3px 8px;text-align:center}
+.cam[data-cam="live"] .camlbl{display:none}
+
+.trials{flex:1 1 auto;display:flex;flex-direction:column;gap:6px;min-height:150px}
+.lastrun{display:flex;flex-direction:column;gap:6px}
+.lastrun .lbox{align-items:start;flex:none}
+.lastrun .verdict{flex:0 1 auto;min-height:2.8em;overflow:auto}
+.verdict{display:flex;align-items:flex-start;gap:6px;margin:0;padding:4px 8px;overflow-wrap:anywhere;background:var(--dro);color:var(--drofg);border:1px solid var(--fieldline);font:700 13px/1.35 var(--sans)}
+.verdict.pass{color:var(--ok)}.verdict.fail{color:var(--bad)}
+.verdict .ic{margin-top:1px}.verdict:not(.pass):not(.fail) .ic{display:none}
+.clidle{margin:0;font-size:calc(var(--fs) * .88);color:var(--fg2)}
+.tblwrap{flex:1 1 auto;min-height:5.5em;overflow:auto;background:var(--field);border:1px solid var(--fieldline)}
+.ttbl{width:100%;border-collapse:collapse;font:600 12px/1.3 var(--sans);color:var(--fieldfg);font-variant-numeric:tabular-nums}
+.ttbl th{position:sticky;top:0;background:var(--face);color:var(--fg2);font:700 12px/1.3 var(--sans);text-align:left;padding:3px 5px;border-bottom:1px solid var(--fieldline);white-space:nowrap}
+.ttbl td{padding:2px 5px;white-space:nowrap;border-bottom:1px solid var(--fieldline)}
+.ttbl td.n,.ttbl th.n{text-align:right}
+.ttbl tbody tr{cursor:pointer}
+.ttbl tbody tr[aria-selected="true"]{background:var(--sel);color:var(--selfg)}
+.ttbl tr.rec td{color:var(--bad);font-weight:700}
+.ttbl tr.rec[aria-selected="true"] td{color:var(--selfg)}
+.ttbl tr.empty td{cursor:default;color:var(--fieldfg);font-weight:400}
+.tbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tbtns .pb{min-height:30px;padding:3px 6px;font-size:13px}
+.tbtns .pb{white-space:nowrap;gap:4px;padding:3px 4px}.tbtns .ic{width:14px;height:14px;vertical-align:-2px}
+/* below 1440 px wide the side column is too narrow for icon plus label in three buttons: the label wins */
+@media (min-width:1100px) and (max-width:1439px){.tbtns .ic{display:none}}
+.tmsg{margin:0;color:var(--fg2);font:12px/1.3 var(--sans);min-height:1.3em;overflow-wrap:anywhere}
+
+body[data-link="down"] .lamp,body[data-link="down"] .rtband{opacity:.45}
+
+/* ---------- status bar ---------- */
+.statusbar{flex:none;display:flex;flex-wrap:wrap;gap:3px;padding:3px;background:var(--face);border-top:1px solid var(--line);font-size:13px}
+.sbp{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sbp.grow{flex:1}
+.sbp.ok{color:var(--ok);font-weight:700}.sbp.bad{background:var(--alarmbg);color:var(--alarmfg);font-weight:700}
+#hdralarm .ic{display:none}#hdralarm.ok .ic,#hdralarm.bad .ic{display:inline}
+
+/* ---------- dialogs ---------- */
+.modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.35)}
+.dlg,.win{background:var(--face);color:var(--fg);border:1px solid var(--btnline);padding:2px}
+.dlg{width:min(480px,100%)}
+.dlgtitle{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--title);color:var(--titlefg);font-weight:700;padding:4px 6px}
+.dlgbody{display:flex;gap:14px;align-items:flex-start;padding:16px 14px 10px}
+.warnicon{flex:none;width:30px;height:30px;color:var(--amber)}
+#confirmtxt{margin:0;font-weight:600;line-height:1.4}
+.dlgbtns{display:flex;justify-content:flex-end;gap:8px;padding:6px 14px 12px;flex-wrap:wrap}
+.dlgbtns .pb{min-width:7em}
+.win.diag{position:fixed;z-index:40;right:16px;top:44px;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 120px);display:flex;flex-direction:column}
+.xbtn{width:22px;height:20px;padding:0;display:flex;align-items:center;justify-content:center}
+.diagin{padding:10px;overflow:auto;min-height:0}
+.diagbtns{display:flex;gap:8px;margin-bottom:8px}
+.diagline{margin:4px 0;font:13px/1.4 var(--sans);overflow-wrap:anywhere}
+.diagline a{color:var(--fg)}
+#rawjson,#logtail{margin:8px 0 0;padding:8px;background:var(--field);color:var(--fieldfg);font:12px/1.35 var(--sans);white-space:pre-wrap;overflow-wrap:anywhere;max-height:40vh;overflow:auto}
+
+/* ---------- desktop: fixed grid filling the window ---------- */
+@media (min-width:1100px) and (min-height:680px){
+  body{height:100vh;overflow:hidden}
+  .panel{display:grid;grid-template-columns:minmax(330px,24fr) minmax(0,53fr) minmax(300px,23fr);
+    grid-template-rows:minmax(0,1fr) minmax(0,2fr);grid-template-areas:"cmd rt side" "cmd trend side"}
+  .colcmd{grid-area:cmd}.rt{grid-area:rt}.trend{grid-area:trend}.colside{grid-area:side}
+  .control,.colside .camgrp{flex:none}
+  .lastrun{flex:1 1 0;min-height:0}
+  .colside .params,.colside .io{flex:none}
+}
+
+/* ---------- narrower: stacked, page scrolls ---------- */
+@media not all and (min-width:1100px) and (min-height:680px){
+  .cam{max-width:none}
+  .chartbox{height:260px;flex:none}
+  .rtband{flex:none;grid-template-rows:repeat(2,112px)}
+  .tblwrap{max-height:16em}
+}
+@media (max-width:700px){
+  .panel{padding:14px 8px 10px}
+  body{padding-bottom:84px}
+  h1{font-size:15px}
+  .frow{grid-template-columns:6em minmax(0,1fr)}
+  .trackbar{margin-left:0}
+  .radios button,.spin input,.numf input,.pb{min-height:56px}
+  .spinbtns{width:44px}
+  .estopwrap{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:8px 16px;background:var(--collar);border:0;border-top:1px solid #000}
+  .estopwrap .cap{display:none}
+  .estopring{--es:62px;width:100%;height:auto;border-radius:0;padding:0;background:none;border:0}
+  #estop{flex-direction:row;gap:.4em;height:62px;border-radius:2px;font-size:18px}
+  .statusbar{padding-bottom:6px}
+  .sbp.grow{display:none}
+  .lbox,.params .lbox,.lastrun .lbox{grid-template-columns:7em minmax(0,1fr)}
+  .rtband{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,96px)}
+}

@@ -1,0 +1,1 @@
+uPlot (Leon Sorokin), MIT licence, full text in LICENSE next to this file. Used for the strip-chart trend.

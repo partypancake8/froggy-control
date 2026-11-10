@@ -1,16 +1,37 @@
 # Froggy motor settings. Anything here overrides CONFIG at the top of froggy_motor.py.
 # deploy.sh copies this file to the Pi with the code.
+# Driver since 2026-11-09: STEPPERONLINE CL57T-V41 closed loop, wired as Variant A in WIRING-CL57T.md:
+# PUL, DIR and ENA straight from the GPIOs to PUL+, DIR+, ENA+, the minus terminals to Pi GND, S3 on 5V.
+# For the old open-loop bench set [driver] model = "DM320T" and alm to "none".
 
-motor = "17HS08-1004"        # or "17HS19-2004": also set SW1..SW3 on the DM320T (WIRING.md)
-microstep = 16               # must match SW4 OFF, SW5 OFF, SW6 ON
+motor = "17HS19-2004D-E1K"   # 2.0 A/phase closed-loop NEMA 17 with the 1000-line encoder
+microstep = 16               # 3200 pulses/rev: CL57T SW1 OFF, SW2 OFF, SW3 ON, SW4 ON
 max_rpm = 600
-max_accel_rpm_per_s = 200    # about 0.08 Nm on the 0.0038 kg m^2 rotor: inside the 17HS08 torque
+max_accel_rpm_per_s = 200    # about 0.08 Nm on the 0.0038 kg m^2 drum: well inside the motor
 emergency_decel_s = 0.5      # fine for the bare motor; use 2.0 (400 rpm) or 3.0 (600 rpm) with the drum on
-dir_cw_level = 0             # flip to 1 if "cw" turns the drum the wrong way
+dir_cw_level = 0             # flip to 1 if "cw" turns the drum the wrong way (or flip CL57T SW5)
+ena_enable_level = 0         # GPIO 27 low = ENA opto dark = driver enabled; high = disabled (manual p. 3, 12)
+alm_blocks_start = true      # ALM divider wired 2026-11-09, so an active ALM refuses starts and stops a run.
+camera = false               # the bench Pi 3 B+ has no camera: the ui hides the preview and starts no rpicam-vid
+trials_keep = 500            # trial store trials/<id>.json.gz (one per actuation): keep at most this many files
+trials_max_mb = 200          # and at most this many MB; the oldest trial is deleted first when either is exceeded
 
-[pins]                       # BCM numbers, as wired 2026-10-21 (two 2N7000s, see WIRING.md)
-pul = 18                     # physical pin 12; must be a hardware PWM pin (12, 13, 18 or 19)
-dir = 27                     # physical pin 13
-ena = "none"                 # not wired: driver always enabled. NPN variant: ena = 24
+[driver]
+model = "CL57T-V41"          # or "DM320T"
+s1 = "0"                     # rotary switch S1: 0 = 2.8 A peak / 2.0 A RMS, factory gains (codes 0..3 only for this motor)
+loop = "closed"              # SW6 OFF = closed loop. Set "open" if you flip SW6 ON for an open-loop comparison
+alm_active_level = 0         # GPIO level that means ALARM with the 10 k / 15 k divider (wired 2026-11-09).
+                             # Normal-state level 1 was measured on the bench; the active-state level is
+                             # unconfirmed until the first real fault. If `status` says ALARM while the red LED is off, set this to 1
+enc_ppr = 1000               # 17HS19-2004D-E1K encoder: 1000 lines/rev (4000 counts/rev in quadrature)
+
+[pins]                       # BCM numbers (see WIRING-CL57T.md for the physical pins)
+pul = 18                     # physical pin 12 to PUL+; must be a hardware PWM pin (12, 13, 18 or 19)
+dir = 17                     # physical pin 11 to DIR+
+ena = 27                     # physical pin 13 to ENA+; driver enabled only while a run is active
 estop = 25                   # physical pin 22, NC contact to GND pin 20
-index = 17                   # physical pin 11 (free since PUL moved to pin 12)
+index = "none"               # no index sensor fitted
+alm = 22                     # physical pin 15; 10 k / 15 k divider wired 2026-11-09 (ALM via 10 k to 5 V, 15 k to GND, COM- to GND)
+pend = "none"                # the CL57T-V41 has no PEND (in-position) output
+brk = "none"                 # optional: CL57T BRK on GPIO 23 (pin 16) with its own divider, logged raw
+enc_a = 5                    # encoder tap on GPIO 5 (physical pin 29): EA+ through a 10 k series resistor, EGND to Pi GND (pin 25)

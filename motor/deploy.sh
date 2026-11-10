@@ -1,18 +1,24 @@
 #!/bin/bash
 export FROGGY_PI_USER="${FROGGY_PI_USER:-froggy}"
 [[ "$FROGGY_PI_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || { echo "Invalid FROGGY_PI_USER" >&2; exit 2; }
-# deploy.sh: copy the motor code to froggy-pi and make sure pigpio is installed and running.
+# deploy.sh: copy the motor code and the ui/ page to the main Pi and make sure pigpio is installed
+# and running.
 # Idempotent. Works with no internet on the Pi: if apt cannot reach the archive, it installs the
 # pigpio .debs vendored in ./debs (Raspberry Pi bookworm arm64, sha256-checked) with dpkg -i.
+# On a trixie card with no pigpio package in apt the bookworm debs are used too (they only depend
+# on libc6 and python3).
 # Host: $FROGGY_HOST (set by froggy-motor), else `froggy-motor --which-host` does the lookup
-# (froggy-pi.local, then $FROGGY_PI).
+# ($FROGGY_PI, froggy-pi.local, ~/.config/froggy/pi-host).
+# Copies the code, motor.toml and ui/ only. Docs and vendor PDFs stay on the laptop.
+# The CL57T-V41 needs nothing new on the Pi: ALM and the encoder tap are plain GPIO inputs
+# read through pigpio, and the RS232 tuning port is not used by this code.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 QUIET=""; [[ "${1:-}" == "--quiet" ]] && QUIET=1
 say() { [[ -z "$QUIET" ]] && echo "$@"; return 0; }
 HOST="${FROGGY_HOST:-$("$HERE/../bin/froggy-motor" --which-host 2>/dev/null)}"
 if [[ -z "$HOST" ]]; then
-  echo "deploy: froggy-pi unreachable (tried froggy-pi.local, \$FROGGY_PI): connect the Ethernet cable or hotspot" >&2
+  echo "deploy: main Pi unreachable (tried \$FROGGY_PI, froggy-pi.local, ~/.config/froggy/pi-host): connect the Ethernet cable or hotspot" >&2
   exit 1
 fi
 SSH=(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=auto
@@ -20,9 +26,17 @@ SSH=(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMast
 SCP=(scp -q -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o "ControlPath=/tmp/froggy-ssh-%C")
 "${SSH[@]}" true 2>/dev/null || { echo "deploy: ssh to ${FROGGY_PI_USER}@$HOST failed (ConnectTimeout 10)" >&2; exit 1; }
 "${SSH[@]}" 'mkdir -p ~/froggy-motor/debs ~/froggy-motor/logs' || exit 1
-FILES=("$HERE/froggy_motor.py")
+FILES=("$HERE"/froggy_*.py)
 [[ -f "$HERE/motor.toml" ]] && FILES+=("$HERE/motor.toml")
 "${SCP[@]}" "${FILES[@]}" "${FROGGY_PI_USER}@$HOST:~/froggy-motor/" || { echo "deploy: copy failed" >&2; exit 1; }
+if [[ -d "$HERE/ui" ]]; then
+  # ui/ (index.html, app.js, app.css, vendor/) minus screenshots, tests, logs and caches
+  UITMP="$(mktemp -d)"; mkdir -p "$UITMP/ui"
+  (cd "$HERE" && tar -cf - --exclude='ui/screenshots' --exclude='ui/test_ui.py' --exclude='ui/.api-server.log' \
+     --exclude='__pycache__' ui) | tar -xf - -C "$UITMP"
+  "${SCP[@]}" -r "$UITMP/ui" "${FROGGY_PI_USER}@$HOST:~/froggy-motor/" || { rm -rf "$UITMP"; echo "deploy: ui copy failed" >&2; exit 1; }
+  rm -rf "$UITMP"
+fi
 "${SSH[@]}" 'dpkg -s pigpiod python3-pigpio >/dev/null 2>&1' || \
   "${SCP[@]}" "$HERE"/debs/*.deb "$HERE/debs/SHA256SUMS" "${FROGGY_PI_USER}@$HOST:~/froggy-motor/debs/" || { echo "deploy: copy of debs failed" >&2; exit 1; }
 say "deploy: code copied to $HOST:~/froggy-motor/"
@@ -49,6 +63,8 @@ fi
 sudo -n systemctl enable --now pigpiod >/dev/null 2>&1 || { echo "pi: could not start pigpiod" >&2; exit 1; }
 for i in 1 2 3 4 5 6 7 8 9 10; do systemctl is-active --quiet pigpiod && break; sleep 0.5; done
 systemctl is-active --quiet pigpiod || { echo "pi: pigpiod not active" >&2; exit 1; }
+# status prints the driver model and the live ALM / PEND levels, so a wrong alm_active_level
+# or an unplugged ALM wire shows up right after a deploy
 if [[ -z "$QUIET" ]]; then python3 froggy_motor.py status; fi
 REMOTE
 rc=$?

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Froggy motor control</title>
+<script>/* night is the default; only a saved toggle (not the OS preference) picks day */try{var t=localStorage.getItem('froggy-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="vendor/uplot/uPlot.min.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="titlebar">
+  <div class="tb-title">
+    <h1>Froggy Motor Control, <span id="ttldrv">driver ...</span> <span id="ttlloop"></span></h1>
+    <span class="badge" id="drybadge" hidden><svg class="ic s12" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-flask"></use></svg>DRY RUN</span>
+  </div>
+  <div class="tb-right">
+    <div class="connfield" id="connfield" role="status" aria-live="polite" data-link="wait">
+      <svg class="ic" id="conn" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-plug-connected"></use></svg><span id="conntxt">CONNECTING to the motor server</span>
+    </div>
+    <button type="button" class="tbbtn" id="diagbtn" aria-expanded="false" aria-controls="diagbody"><svg class="ic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-stethoscope"></use></svg><span id="diaglbl">Diagnostics</span></button>
+    <button type="button" class="tbbtn" id="themebtn" aria-label="Switch to day theme"><svg class="ic" id="themeic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-sun"></use></svg><span id="themelbl">Day</span></button>
+  </div>
+</header>
+
+<div class="strip warn" id="nopulses" hidden><svg class="ic s18" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-alert-triangle"></use></svg><span>Encoder sees no pulses while the motor is commanded to turn. Check the encoder cable before trusting the speed.</span></div>
+
+<main class="panel">
+  <div class="colcmd">
+  <section class="grp control" id="control" aria-label="Motor control">
+    <h2 class="cap">Command</h2>
+    <div class="linkline" id="cmdlink" hidden><svg class="ic" id="cmdlinkic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-plug-connected-x"></use></svg><span id="cmdlinktxt"></span></div>
+
+    <div class="frow">
+      <span class="flbl">Mode</span>
+      <div class="radios" role="radiogroup" aria-label="Test mode" id="modeseg">
+        <button type="button" role="radio" data-mode="speed" aria-checked="true">Hold</button>
+        <button type="button" role="radio" data-mode="ramp" aria-checked="false">Timed test</button>
+        <button type="button" role="radio" data-mode="cltest" aria-checked="false">Closed-loop test</button>
+      </div>
+    </div>
+
+    <div class="frow">
+      <label class="flbl" for="rpm">Target RPM</label>
+      <div class="spin">
+        <input id="rpm" type="number" inputmode="decimal" min="0" max="600" step="1" value="100" aria-label="Target RPM">
+        <span class="spinbtns"><button type="button" id="rpmup" aria-label="Increase RPM by 10" tabindex="-1"><svg class="ic s12" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-chevron-up"></use></svg></button><button type="button" id="rpmdn" aria-label="Decrease RPM by 10" tabindex="-1"><svg class="ic s12" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-chevron-down"></use></svg></button></span>
+        <span class="unit">rpm</span>
+      </div>
+    </div>
+    <div class="trackbar">
+      <input id="rpmslider" type="range" min="0" max="600" step="1" value="100" aria-label="Target RPM slider">
+      <div class="ticks" id="ticks"><span>0</span><span>150</span><span>300</span><span>450</span><span id="maxlbl">600</span></div>
+    </div>
+
+    <div class="frow">
+      <span class="flbl">Direction</span>
+      <div class="radios two" role="radiogroup" aria-label="Direction" id="dirseg">
+        <button type="button" role="radio" data-dir="cw" aria-checked="true"><svg class="ic s18" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-rotate-clockwise"></use></svg>CW</button>
+        <button type="button" role="radio" data-dir="ccw" aria-checked="false"><svg class="ic s18" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-rotate"></use></svg>CCW</button>
+      </div>
+    </div>
+    <div class="frow">
+      <label class="flbl" for="accel">Ramp</label>
+      <div class="numf"><input id="accel" type="number" inputmode="decimal" min="0" step="0.5" value="3"><span class="unit">s</span></div>
+    </div>
+    <div class="frow extra" data-for="ramp cltest" hidden>
+      <label class="flbl" for="hold">Hold</label>
+      <div class="numf"><input id="hold" type="number" inputmode="decimal" min="0" step="1" value="10"><span class="unit">s</span></div>
+    </div>
+    <div class="frow extra" data-for="ramp cltest" hidden>
+      <label class="flbl" for="decel">Decel</label>
+      <div class="numf"><input id="decel" type="number" inputmode="decimal" min="0" step="0.5" value="3"><span class="unit">s</span></div>
+    </div>
+
+    <p class="hint" id="modehint">Ramps to the speed and holds until you press STOP.</p>
+
+    <div class="actions">
+      <button type="button" class="pb go" id="start"><svg class="ic s18" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-player-play"></use></svg><span id="startlbl">START</span></button>
+      <button type="button" class="pb stop" id="stop"><svg class="ic s18" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-player-stop"></use></svg>STOP</button>
+    </div>
+    <p class="msgbox" id="msg" role="status" aria-live="polite">Motor is off. Nothing moves until you press START.</p>
+  </section>
+
+  <section class="grp lastrun" id="lastrun" aria-label="Last run">
+    <h2 class="cap">Last run</h2>
+    <p class="verdict" id="verdict" hidden><svg class="ic s14" id="verdictic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-circle-check"></use></svg><span id="verdicttxt"></span></p>
+    <p class="clidle" id="clidle">No closed-loop test on this page yet. Pick "Closed-loop test" under Mode and press START.</p>
+    <div class="lbox"><span class="flbl">Last stop</span><span class="pv" id="c_stop">none</span></div>
+    <div class="lbox"><span class="flbl">Last run</span><span class="pv" id="c_sum">none yet</span></div>
+  </section>
+
+  <div class="grp estopwrap">
+    <h2 class="cap">Emergency stop</h2>
+    <div class="estopring"><button type="button" id="estop"><span>EMERGENCY</span><span>STOP</span></button></div>
+  </div>
+  </div>
+
+  <section class="grp rt" aria-label="Real time data">
+    <h2 class="cap">Data</h2>
+    <div class="rtband">
+      <div class="rv"><span class="flbl">Commanded</span><div class="vv"><span class="rvbox" id="r_cmd">0</span> <span class="u">rpm</span></div></div>
+      <div class="rv"><span class="flbl">Encoder</span><div class="vv"><span class="rvbox" id="r_enc">---</span> <span class="u" id="r_encu">rpm</span></div></div>
+      <div class="rv" id="ferrtile"><span class="flbl">Following error</span><div class="vv"><span class="rvbox" id="r_ferr">-.--</span> <span class="u">rev</span></div></div>
+      <div class="rv ferrpct"><span class="flbl">Following error</span><div class="vv" id="r_ferrpct"><span class="rvbox" id="r_ferrpctv">--.-</span> <span class="u">%</span></div></div>
+      <div class="rv stcell"><span class="flbl">Motor state</span><div class="vv"><span class="rvbox w7 state" id="r_state">off</span></div></div>
+      <div class="rv"><span class="flbl">Elapsed</span><div class="vv"><span class="rvbox" id="r_elapsed">0.0</span> <span class="u">s</span></div></div>
+    </div>
+  </section>
+
+  <section class="grp trend" aria-label="Speed trend">
+    <h2 class="cap">Trend</h2>
+    <div class="trendhead">
+      <span id="trendttl">Speed, last 60 s</span>
+      <button type="button" class="pb" id="t_live" hidden><svg class="ic s14" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-player-skip-forward"></use></svg>Live</button>
+      <span class="legend"><i class="sw cmd"></i>Commanded <i class="sw enc"></i>Encoder</span>
+    </div>
+    <div class="chartbox"><div id="chart"></div>
+      <span class="tag cmd" id="tagcmd" hidden></span><span class="tag enc" id="tagenc" hidden></span></div>
+  </section>
+
+  <div class="colside">
+    <section class="grp io" aria-label="Inputs and outputs">
+      <h2 class="cap">I/O</h2>
+      <div class="lamp"><span class="led" id="l_drv"></span><span class="ll">Driver enabled</span><span class="ls" id="r_drv">disabled</span></div>
+      <div class="lamp"><span class="led" id="l_estop"></span><span class="ll">E-stop input</span><span class="ls" id="r_estop">--</span></div>
+      <div class="lamp"><span class="led" id="l_alarm"></span><span class="ll">Alarm</span><span class="ls" id="r_alarm">--</span></div>
+      <div class="lamp"><span class="led" id="l_pulses"></span><span class="ll">Encoder pulses</span><span class="ls" id="r_pulses">--</span></div>
+      <div class="lamp"><span class="led" id="l_run"></span><span class="ll">Run active</span><span class="ls" id="r_run">no</span></div>
+    </section>
+
+    <section class="grp params" aria-label="Parameters">
+      <h2 class="cap">Parameters</h2>
+      <div class="lbox"><span class="flbl">Driver model</span><span class="pv" id="p_driver">--</span></div>
+      <div class="lbox"><span class="flbl">Loop mode</span><span class="pv" id="p_loop">--</span></div>
+      <div class="lbox"><span class="flbl">Pulses / rev</span><span class="pv" id="p_ppr">--</span></div>
+      <div class="lbox"><span class="flbl">Max RPM</span><span class="pv" id="p_max">--</span></div>
+      <div class="lbox"><span class="flbl">Max accel</span><span class="pv" id="p_acc">--</span></div>
+      <div class="lbox"><span class="flbl">Encoder PPR</span><span class="pv" id="p_enc">--</span></div>
+      <div class="lbox"><span class="flbl">Pin map</span><span class="pv" id="p_pins">--</span></div>
+    </section>
+
+    <section class="grp camgrp" id="camgrp">
+      <h2 class="cap" id="camcap"></h2>
+      <div class="cam" id="camwrap" data-cam="none">
+        <img id="cam" alt="" hidden>
+        <span class="camlbl" id="camlbl"></span>
+      </div>
+    </section>
+
+    <section class="grp trials" id="trials" aria-label="Trials">
+      <h2 class="cap">Trials</h2>
+      <div class="tblwrap">
+        <table class="ttbl" id="ttbl" aria-label="Recorded trials, newest first">
+          <thead><tr><th>Start</th><th>Mode</th><th class="n">RPM</th><th class="n">Dur s</th><th>Stop</th><th class="n">Max enc</th></tr></thead>
+          <tbody id="tbody"><tr class="empty"><td colspan="6">No trials recorded yet</td></tr></tbody>
+        </table>
+      </div>
+      <div class="tbtns">
+        <button type="button" class="pb" id="t_csv" disabled><svg class="ic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-file-type-csv"></use></svg>Export CSV</button>
+        <button type="button" class="pb" id="t_pdf" disabled><svg class="ic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-file-type-pdf"></use></svg>Export PDF</button>
+        <button type="button" class="pb" id="t_show" disabled><svg class="ic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-chart-line"></use></svg>Show</button>
+      </div>
+      <p class="tmsg" id="tmsg" role="status" aria-live="polite"></p>
+      <a id="t_dl" hidden></a>
+    </section>
+  </div>
+</main>
+
+<footer class="statusbar">
+  <span class="sbp" id="hdrdriver">Driver: ...</span>
+  <span class="sbp" id="hdrloop">Loop: ...</span>
+  <span class="sbp" id="hdralarm"><svg class="ic s14" id="hdralarmic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-circle-check"></use></svg><span id="hdralarmtxt">Alarm: ...</span></span>
+  <span class="sbp grow" id="sbhint">STOP and EMERGENCY STOP need no confirmation.</span>
+</footer>
+
+<div class="modal" id="confirm" hidden>
+  <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="confirmttl" aria-describedby="confirmtxt">
+    <div class="dlgtitle" id="confirmttl">Confirm run</div>
+    <div class="dlgbody">
+      <svg class="ic s30 warnicon" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-alert-triangle-filled"></use></svg>
+      <p id="confirmtxt"></p>
+    </div>
+    <div class="dlgbtns">
+      <button type="button" class="pb go" id="confirmyes">Yes, spin the motor</button>
+      <button type="button" class="pb" id="confirmno">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<section class="win diag" id="diagbody" aria-label="Diagnostics" hidden>
+  <div class="dlgtitle"><span>Diagnostics</span><button type="button" class="xbtn" id="diagclose" aria-label="Close diagnostics"><svg class="ic s14" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-x"></use></svg></button></div>
+  <div class="diagin">
+    <div class="diagbtns">
+      <button type="button" class="pb" id="enable"><svg class="ic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-power"></use></svg>Enable driver</button>
+      <button type="button" class="pb" id="disable"><svg class="ic" aria-hidden="true" focusable="false"><use href="vendor/tabler-icons/sprite.svg#ti-power"></use></svg>Disable driver</button>
+    </div>
+    <p class="diagline" id="diaglimits"></p>
+    <p class="diagline" id="diagstop"></p>
+    <p class="diagline" id="diagsummary"></p>
+    <p class="diagline" id="diagcsv" hidden><a id="csvlink" href="#">Latest CSV</a></p>
+    <pre id="logtail" hidden></pre>
+    <pre id="rawjson">{}</pre>
+  </div>
+</section>
+
+<script src="vendor/uplot/uPlot.iife.min.js"></script>
+<script src="vendor/jspdf/jspdf.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

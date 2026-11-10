@@ -6,6 +6,30 @@ Python packages installed through the requirements files, Raspberry Pi OS images
 
 The optional motor-tone demo includes only generic scales and arpeggios. No commercial melody transcription is included in the published branch.
 
+## Motor control page libraries in `motor/ui/vendor/`
+
+| Folder | Library | Licence |
+| --- | --- | --- |
+| `uplot/` | uPlot by Leon Sorokin (live RPM chart) | MIT, full text in `LICENSE` |
+| `jspdf/` | jsPDF 2.5.2 by James Hall and yWorks GmbH (trial PDF report) | MIT, full text in `LICENSE` |
+| `tabler-icons/` | @tabler/icons 3.51.0 subset and sprite | MIT, full text in `LICENSE` |
+
+Each folder has a `VERSION.txt` with the source URL. They are served locally by the Pi; the page makes no network requests at runtime.
+
+## Vendor manuals cited by `motor/WIRING-CL57T.md`
+
+These PDFs are not redistributed here. Download them from their owners:
+
+| Document | Owner | Source |
+| --- | --- | --- |
+| CL57T(V4.0) closed loop stepper driver user manual | STEPPERONLINE | https://www.stepperonline.co.uk/download/CL57T_V4.0.pdf |
+| CL57T(V4.1) user manual (not downloadable at the time of writing, see WIRING-CL57T.md) | STEPPERONLINE | https://files.omc-stepperonline.com/CL57T-V41_Manual.pdf |
+| CL42T(V4.1) user manual (source of the P5 tuning port pinout) | STEPPERONLINE | https://forum.linuxcnc.org/media/kunena/attachments/36700/CL42T-V41Manual2.pdf |
+| 17HS19-2004D-E1000 motor drawing and datasheet | STEPPERONLINE | https://www.stepperonline.co.uk/download/17HS19-2004D-E1000.pdf |
+| 2N7000, 2N7002, NDS7002A data sheet | onsemi | https://www.onsemi.com/download/data-sheet/pdf/nds7002a-d.pdf |
+
+The crops and pictures in `motor/schematic-img/` come from these manuals, a STEPPERONLINE help article, the Raspberry Pi documentation (CC BY-SA 4.0) and Wikimedia Commons (CC BY-SA 4.0). `motor/schematic-img/sources.txt` lists each source, licence and checksum. Vendor images stay under their owners' terms and are included only as wiring references for this student project.
+
 Publication does not assign a new license to the project-authored code or claim ownership of third-party dependencies.
 
 ## Vendor CAD models in `model/cad/vendor/`
